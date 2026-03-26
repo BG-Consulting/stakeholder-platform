@@ -5,8 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Stakeholder } from "../api/discover/route";
 
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiYmV5b25kZ3JvdXAiLCJhIjoiY21uNm1qeTB0MDY4aTJxc2JxcHlkZ3NiaSJ9.mszuBYGYu-R55vsajYfQbQ";
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 const TYPE_COLORS: Record<Stakeholder["type"], string> = {
   government: "#1d4ed8",
