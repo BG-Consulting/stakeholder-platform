@@ -1,9 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Link from "next/link";
-import type { Stakeholder } from "../api/discover/route";
+import type { Stakeholder, StakeholderCategory } from "../api/discover/route";
 import { getDemoData, DEMO_HINTS } from "../lib/demoData";
+
+const MapView = lazy(() => import("./MapView"));
+
+type ViewMode = "list" | "map";
+
+const CATEGORIES: StakeholderCategory[] = [
+  "Government & Regulatory",
+  "Private Sector",
+  "Civil Society & NGOs",
+  "Media & Communications",
+  "Academic & Research",
+  "International Organizations & Donors",
+];
+
+const CATEGORY_COLORS: Record<StakeholderCategory, string> = {
+  "Government & Regulatory": "#1d4ed8",
+  "Private Sector": "#0f766e",
+  "Civil Society & NGOs": "#7e22ce",
+  "Media & Communications": "#b45309",
+  "Academic & Research": "#0369a1",
+  "International Organizations & Donors": "#0d9488",
+};
 
 const TYPE_LABELS: Record<Stakeholder["type"], string> = {
   government: "Government",
@@ -11,6 +33,7 @@ const TYPE_LABELS: Record<Stakeholder["type"], string> = {
   ngo: "NGO",
   media: "Media",
   academic: "Academic",
+  international: "International",
 };
 
 const TYPE_COLORS: Record<Stakeholder["type"], string> = {
@@ -19,6 +42,7 @@ const TYPE_COLORS: Record<Stakeholder["type"], string> = {
   ngo: "#7e22ce",
   media: "#b45309",
   academic: "#0369a1",
+  international: "#0d9488",
 };
 
 const STANCE_CONFIG: Record<
@@ -114,10 +138,40 @@ function InfluenceBar({ score }: { score: number }) {
   );
 }
 
+function ContactInfo({ contact }: { contact?: string }) {
+  if (!contact) return null;
+  const isEmail = contact.includes("@") && !contact.includes("/");
+  const href = isEmail ? `mailto:${contact}` : contact;
+  const display = contact.length > 40 ? contact.slice(0, 37) + "…" : contact;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      {isEmail ? (
+        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "#60a5fa" }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ) : (
+        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "#60a5fa" }}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+      )}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs break-all hover:underline"
+        style={{ color: "#60a5fa" }}
+        title={contact}
+      >
+        {display}
+      </a>
+    </div>
+  );
+}
+
 function StakeholderCard({ stakeholder }: { stakeholder: Stakeholder }) {
   const stance = STANCE_CONFIG[stakeholder.stance];
   const typeColor = TYPE_COLORS[stakeholder.type];
-  const sources = stakeholder.sources ?? [];
 
   return (
     <div
@@ -135,32 +189,44 @@ function StakeholderCard({ stakeholder }: { stakeholder: Stakeholder }) {
       }
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3
-            className="font-bold text-base text-white truncate"
-            title={stakeholder.name}
-          >
-            {stakeholder.name}
-          </h3>
-          <p
-            className="text-sm mt-0.5 truncate"
-            style={{ color: "#8892a4" }}
-            title={stakeholder.organization}
-          >
-            {stakeholder.organization}
-          </p>
-          <p className="text-xs mt-0.5 truncate" style={{ color: "#4a5568" }}>
-            <span style={{ color: "#6b7a8d" }}>Current: </span>
-            {stakeholder.current_officeholder ?? "To be verified"}
-          </p>
-        </div>
-        <span
-          className="shrink-0 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide"
-          style={{ background: `${typeColor}25`, color: typeColor }}
+      <div>
+        <h3
+          className="font-bold text-base text-white"
+          title={stakeholder.name}
         >
-          {TYPE_LABELS[stakeholder.type]}
-        </span>
+          {stakeholder.name}
+        </h3>
+        <p
+          className="text-sm mt-0.5"
+          style={{ color: "#8892a4" }}
+        >
+          {stakeholder.organization}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: "#4a5568" }}>
+          <span style={{ color: "#6b7a8d" }}>Current: </span>
+          {stakeholder.current_officeholder ?? "To be verified"}
+        </p>
+        <ContactInfo contact={stakeholder.contact} />
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          <span
+            className="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide"
+            style={{ background: `${typeColor}25`, color: typeColor }}
+          >
+            {TYPE_LABELS[stakeholder.type]}
+          </span>
+          {stakeholder.category && (
+            <span
+              className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wide"
+              style={{
+                background: `${CATEGORY_COLORS[stakeholder.category] ?? "#555"}20`,
+                color: CATEGORY_COLORS[stakeholder.category] ?? "#999",
+                border: `1px solid ${CATEGORY_COLORS[stakeholder.category] ?? "#555"}30`,
+              }}
+            >
+              {stakeholder.category}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Stance + Influence */}
@@ -213,45 +279,6 @@ function StakeholderCard({ stakeholder }: { stakeholder: Stakeholder }) {
         </p>
       </div>
 
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} />
-
-      {/* Sources */}
-      <div>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest mb-2"
-          style={{ color: "#8892a4" }}
-        >
-          Sources
-        </p>
-        {sources.length > 0 ? (
-          <ul className="flex flex-col gap-1.5">
-            {sources.map((url, i) => (
-              <li key={i} className="flex gap-2 items-start">
-                <span
-                  className="text-xs mt-0.5 shrink-0"
-                  style={{ color: "#4a5568" }}
-                >
-                  {i + 1}.
-                </span>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs break-all leading-relaxed hover:underline"
-                  style={{ color: "#60a5fa" }}
-                  title={url}
-                >
-                  {url.length > 60 ? url.slice(0, 57) + "…" : url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs italic" style={{ color: "#4a5568" }}>
-            No sources retrieved — verify independently.
-          </p>
-        )}
-      </div>
     </div>
   );
 }
@@ -260,10 +287,13 @@ export default function DiscoverPage() {
   const [sector, setSector] = useState("");
   const [region, setRegion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [stakeholders, setStakeholders] = useState<Stakeholder[] | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastQuery, setLastQuery] = useState<{ sector: string; region: string } | null>(null);
+  const [activeCategory, setActiveCategory] = useState<StakeholderCategory | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,15 +302,16 @@ export default function DiscoverPage() {
     if (!s || !r) return;
 
     setLoading(true);
+    setLoadingMore(false);
     setError(null);
     setStakeholders(null);
     setResultMode(null);
+    setActiveCategory(null);
     setLastQuery({ sector: s, region: r });
 
     // Check for preset demo scenario first
     const demo = getDemoData(s, r);
     if (demo) {
-      // Small artificial delay so it doesn't feel instantaneous
       await new Promise((res) => setTimeout(res, 600));
       setStakeholders(demo.stakeholders);
       setResultMode("demo");
@@ -288,23 +319,23 @@ export default function DiscoverPage() {
       return;
     }
 
-    // Otherwise hit the live API
+    // ── Batch 1: fetch the first 10-12 high-priority stakeholders ────────
+    let batch1: Stakeholder[] = [];
     try {
       const res = await fetch("/api/discover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sector: s, region: r }),
+        body: JSON.stringify({ sector: s, region: r, batch: 1 }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setStakeholders(data.stakeholders);
+      batch1 = data.stakeholders;
+      setStakeholders(batch1);
       setResultMode("live");
     } catch (err) {
-      // On API failure, fall back to demo data if any scenario matches loosely,
-      // otherwise surface the error
       const fallback = getDemoData(s, r);
       if (fallback) {
         setStakeholders(fallback.stakeholders);
@@ -312,8 +343,32 @@ export default function DiscoverPage() {
       } else {
         setError(err instanceof Error ? err.message : "Unknown error");
       }
-    } finally {
       setLoading(false);
+      return;
+    }
+
+    // Show batch 1 results, switch from full loading to "loading more"
+    setLoading(false);
+    setLoadingMore(true);
+
+    // ── Batch 2: fetch additional 10-12 lesser-known stakeholders ─────────
+    try {
+      const existingNames = batch1.map((s) => s.name);
+      const res = await fetch("/api/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sector: s, region: r, batch: 2, existingNames }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const batch2: Stakeholder[] = data.stakeholders;
+        setStakeholders((prev) => [...(prev ?? []), ...batch2]);
+      }
+      // If batch 2 fails, silently keep batch 1 results
+    } catch {
+      // Batch 2 failure is non-fatal
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -323,6 +378,20 @@ export default function DiscoverPage() {
         neutral: stakeholders.filter((s) => s.stance === "neutral").length,
         opposed: stakeholders.filter((s) => s.stance === "opposed").length,
       }
+    : null;
+
+  const categoryCounts: Record<string, number> = {};
+  if (stakeholders) {
+    for (const s of stakeholders) {
+      const cat = s.category || "Uncategorized";
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    }
+  }
+
+  const filteredStakeholders = stakeholders
+    ? activeCategory
+      ? stakeholders.filter((s) => s.category === activeCategory)
+      : stakeholders
     : null;
 
   return (
@@ -485,8 +554,8 @@ export default function DiscoverPage() {
           </form>
         </div>
 
-        {/* Loading state */}
-        {loading && (
+        {/* Loading state — only show full spinner when no results yet */}
+        {loading && !stakeholders && (
           <div className="text-center py-16">
             <div
               className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4"
@@ -515,7 +584,7 @@ export default function DiscoverPage() {
         )}
 
         {/* Results */}
-        {stakeholders && !loading && (
+        {stakeholders && (
           <>
             {/* Summary bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -568,14 +637,143 @@ export default function DiscoverPage() {
               </div>
             </div>
 
-            {/* Cards grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {stakeholders
-                .sort((a, b) => b.influence_score - a.influence_score)
-                .map((s, i) => (
-                  <StakeholderCard key={i} stakeholder={s} />
-                ))}
+            {/* View toggle */}
+            <div className="flex gap-3 mb-5">
+              <button
+                onClick={() => setViewMode("list")}
+                className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
+                style={{
+                  background: viewMode === "list" ? "var(--crimson)" : "transparent",
+                  color: viewMode === "list" ? "#fff" : "#8892a4",
+                  border: viewMode === "list" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "3px",
+                }}
+              >
+                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                List View
+              </button>
+              <button
+                onClick={() => setViewMode("map")}
+                className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
+                style={{
+                  background: viewMode === "map" ? "var(--crimson)" : "transparent",
+                  color: viewMode === "map" ? "#fff" : "#8892a4",
+                  border: viewMode === "map" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "3px",
+                }}
+              >
+                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Map View
+              </button>
             </div>
+
+            {/* Category filters */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className="px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150"
+                style={{
+                  background: activeCategory === null ? "rgba(204, 41, 54, 0.2)" : "rgba(255,255,255,0.05)",
+                  color: activeCategory === null ? "var(--crimson-light)" : "#8892a4",
+                  border: `1px solid ${activeCategory === null ? "rgba(204, 41, 54, 0.4)" : "rgba(255,255,255,0.08)"}`,
+                }}
+              >
+                All ({stakeholders.length})
+              </button>
+              {CATEGORIES.map((cat) => {
+                const count = categoryCounts[cat] || 0;
+                if (count === 0) return null;
+                const isActive = activeCategory === cat;
+                const color = CATEGORY_COLORS[cat];
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(isActive ? null : cat)}
+                    className="px-3 py-1.5 rounded text-xs font-semibold transition-all duration-150"
+                    style={{
+                      background: isActive ? `${color}30` : "rgba(255,255,255,0.05)",
+                      color: isActive ? color : "#8892a4",
+                      border: `1px solid ${isActive ? `${color}60` : "rgba(255,255,255,0.08)"}`,
+                    }}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* List view */}
+            {viewMode === "list" && (
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                style={{ animation: "fadeIn 0.25s ease-out" }}
+              >
+                  {(filteredStakeholders ?? [])
+                    .sort((a, b) => b.influence_score - a.influence_score)
+                    .map((s, i) => (
+                      <StakeholderCard key={`${s.name}-${i}`} stakeholder={s} />
+                    ))}
+              </div>
+            )}
+            {viewMode === "list" && loadingMore && (
+              <div
+                className="flex items-center justify-center gap-3 mt-6 px-5 py-4 rounded"
+                style={{
+                  background: "var(--navy-800)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <div
+                  className="w-4 h-4 rounded-full border-2 animate-spin"
+                  style={{ borderColor: "var(--crimson)", borderTopColor: "transparent" }}
+                />
+                <p className="text-sm" style={{ color: "#8892a4" }}>
+                  Discovering additional regional and local stakeholders…
+                </p>
+              </div>
+            )}
+
+            {/* Map view */}
+            {viewMode === "map" && (
+              <Suspense
+                fallback={
+                  <div
+                    className="flex items-center justify-center rounded"
+                    style={{ height: "600px", background: "var(--navy-800)", border: "1px solid rgba(255,255,255,0.06)" }}
+                  >
+                    <div
+                      className="w-6 h-6 rounded-full border-2 animate-spin"
+                      style={{ borderColor: "var(--crimson)", borderTopColor: "transparent" }}
+                    />
+                  </div>
+                }
+              >
+                <div style={{ animation: "fadeIn 0.25s ease-out" }}>
+                <MapView stakeholders={filteredStakeholders ?? []} />
+                {loadingMore && (
+                  <div
+                    className="flex items-center justify-center gap-3 mt-4 px-5 py-3 rounded"
+                    style={{
+                      background: "var(--navy-800)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full border-2 animate-spin"
+                      style={{ borderColor: "var(--crimson)", borderTopColor: "transparent" }}
+                    />
+                    <p className="text-sm" style={{ color: "#8892a4" }}>
+                      Discovering additional stakeholders…
+                    </p>
+                  </div>
+                )}
+                </div>
+              </Suspense>
+            )}
           </>
         )}
 
