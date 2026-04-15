@@ -6,6 +6,214 @@ import type { Stakeholder, StakeholderCategory } from "../api/discover/route";
 import { getDemoData, DEMO_HINTS } from "../lib/demoData";
 
 const MapView = lazy(() => import("./MapView"));
+// ——— Add Stakeholder Modal ———
+function AddStakeholderModal({
+  onAdd,
+  onClose,
+}: {
+  onAdd: (s: Stakeholder) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: "",
+    organization: "",
+    current_officeholder: "",
+    type: "government" as Stakeholder["type"],
+    category: "Government & Regulatory" as Stakeholder["category"],
+    influence_score: 5,
+    stance: "neutral" as Stakeholder["stance"],
+    key_position_1: "",
+    key_position_2: "",
+    key_position_3: "",
+    engagement_recommendation: "",
+    contact: "",
+    longitude: "",
+    latitude: "",
+  });
+
+  const handleChange = (field: string, value: string | number) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (!form.name.trim() || !form.organization.trim()) return;
+    const stakeholder: Stakeholder = {
+      name: form.name.trim(),
+      organization: form.organization.trim(),
+      current_officeholder: form.current_officeholder.trim() || "To be verified",
+      type: form.type,
+      category: form.category,
+      influence_score: form.influence_score,
+      stance: form.stance,
+      key_positions: [
+        form.key_position_1.trim() || "To be defined",
+        form.key_position_2.trim() || "To be defined",
+        form.key_position_3.trim() || "To be defined",
+      ],
+      engagement_recommendation: form.engagement_recommendation.trim() || "To be defined",
+      contact: form.contact.trim(),
+      coordinates: [
+        parseFloat(form.longitude) || 0,
+        parseFloat(form.latitude) || 0,
+      ],
+      sources: [],
+    };
+    onAdd(stakeholder);
+    onClose();
+  };
+
+  const inputStyle = {
+    background: "var(--navy-700)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "2px",
+    transition: "border-color 0.2s",
+  };
+
+  const labelStyle = {
+    color: "var(--crimson)",
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    marginBottom: "4px",
+    display: "block",
+  };
+
+  const TYPE_TO_CATEGORY: Record<Stakeholder["type"], Stakeholder["category"]> = {
+    government: "Government & Regulatory",
+    private: "Private Sector",
+    ngo: "Civil Society & NGOs",
+    media: "Media & Communications",
+    academic: "Academic & Research",
+    international: "International Organizations & Donors",
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded p-6"
+        style={{
+          background: "var(--navy-800)",
+          border: "1px solid rgba(204, 41, 54, 0.3)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-white">Add Stakeholder</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* Row 1: Name + Organization */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label style={labelStyle}>Name / Role *</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="e.g. Minister of Energy, Republic of Kenya"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Organization *</label>
+              <input
+                type="text"
+                value={form.organization}
+                onChange={(e) => handleChange("organization", e.target.value)}
+                placeholder="e.g. Ministry of Energy"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Officeholder + Contact */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label style={labelStyle}>Current Officeholder</label>
+              <input
+                type="text"
+                value={form.current_officeholder}
+                onChange={(e) => handleChange("current_officeholder", e.target.value)}
+                placeholder="Full name (or leave blank)"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Contact (email or URL)</label>
+              <input
+                type="text"
+                value={form.contact}
+                onChange={(e) => handleChange("contact", e.target.value)}
+                placeholder="https://... or email@org.com"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Type + Stance + Influence */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label style={labelStyle}>Type</label>
+              <select
+                value={form.type}
+                onChange={(e) => {
+                  const newType = e.target.value as Stakeholder["type"];
+                  handleChange("type", newType);
+                  handleChange("category", TYPE_TO_CATEGORY[newType]);
+                }}
+                className="w-full px-3 py-2 text-sm text-white outline-none"
+                style={inputStyle}
+              >
+                <option value="government">Government</option>
+                <option value="private">Private Sector</option>
+                <option value="ngo">NGO</option>
+                <option value="media">Media</option>
+                <option value="academic">Academic</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Stance</label>
+              <select
+                value={form.stance}
+                onChange={(e) => handleChange("stance", e.target.value)}
+                className="w-full px-3 py-2 text-sm text-white outline-none"
+                style={inputStyle}
+              >
+                <option value="supportive">Supportive</option>
+                <option value="neutral">Neutral</option>
+                <option value="opposed">Opposed</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Influence (1-10)</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={form.influence_score}
+                onChange={(e) => handleChange("influence_score", parseInt(e.target.value) || 5)}
+                className="w-full px-3 py-2 text-sm text-white outline-none"
+                style={inputStyle}
+              />
+            </div>
 
 type ViewMode = "list" | "map";
 
@@ -294,6 +502,7 @@ export default function DiscoverPage() {
   const [lastQuery, setLastQuery] = useState<{ sector: string; region: string } | null>(null);
   const [activeCategory, setActiveCategory] = useState<StakeholderCategory | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -637,37 +846,52 @@ export default function DiscoverPage() {
               </div>
             </div>
 
-            {/* View toggle */}
-            <div className="flex gap-3 mb-5">
+            {/* View toggle + Add button */}
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
+                  style={{
+                    background: viewMode === "list" ? "var(--crimson)" : "transparent",
+                    color: viewMode === "list" ? "#fff" : "#8892a4",
+                    border: viewMode === "list" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: "3px",
+                  }}
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  List View
+                </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
+                  style={{
+                    background: viewMode === "map" ? "var(--crimson)" : "transparent",
+                    color: viewMode === "map" ? "#fff" : "#8892a4",
+                    border: viewMode === "map" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: "3px",
+                  }}
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  Map View
+                </button>
+              </div>
               <button
-                onClick={() => setViewMode("list")}
-                className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white transition-all duration-200 hover:opacity-90"
                 style={{
-                  background: viewMode === "list" ? "var(--crimson)" : "transparent",
-                  color: viewMode === "list" ? "#fff" : "#8892a4",
-                  border: viewMode === "list" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
+                  background: "var(--crimson)",
                   borderRadius: "3px",
                 }}
               >
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                List View
-              </button>
-              <button
-                onClick={() => setViewMode("map")}
-                className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200"
-                style={{
-                  background: viewMode === "map" ? "var(--crimson)" : "transparent",
-                  color: viewMode === "map" ? "#fff" : "#8892a4",
-                  border: viewMode === "map" ? "1px solid var(--crimson)" : "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: "3px",
-                }}
-              >
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Map View
+                Add Stakeholder
               </button>
             </div>
 
@@ -822,6 +1046,17 @@ export default function DiscoverPage() {
       >
         Powered by Claude AI · Stakeholder Intelligence Platform
       </footer>
+      {/* Add Stakeholder Modal */}
+      {showAddModal && (
+        <AddStakeholderModal
+          onAdd={(newStakeholder) => {
+            setStakeholders((prev) => prev ? [...prev, newStakeholder] : [newStakeholder]);
+            if (!resultMode) setResultMode("live");
+            if (!lastQuery) setLastQuery({ sector: "Manual Entry", region: "Various" });
+          }}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
     </div>
   );
 }
