@@ -6,6 +6,7 @@ import type { Stakeholder, StakeholderCategory } from "../api/discover/route";
 import { getDemoData, DEMO_HINTS } from "../lib/demoData";
 
 const MapView = lazy(() => import("./MapView"));
+
 // ——— Add Stakeholder Modal ———
 function AddStakeholderModal({
   onAdd,
@@ -214,6 +215,105 @@ function AddStakeholderModal({
                 style={inputStyle}
               />
             </div>
+          </div>
+
+          {/* Key Positions */}
+          <div>
+            <label style={labelStyle}>Key Positions (3)</label>
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                value={form.key_position_1}
+                onChange={(e) => handleChange("key_position_1", e.target.value)}
+                placeholder="Key position 1"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                value={form.key_position_2}
+                onChange={(e) => handleChange("key_position_2", e.target.value)}
+                placeholder="Key position 2"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                value={form.key_position_3}
+                onChange={(e) => handleChange("key_position_3", e.target.value)}
+                placeholder="Key position 3"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Engagement Recommendation */}
+          <div>
+            <label style={labelStyle}>Engagement Recommendation</label>
+            <textarea
+              value={form.engagement_recommendation}
+              onChange={(e) => handleChange("engagement_recommendation", e.target.value)}
+              placeholder="How should the team engage this stakeholder?"
+              rows={3}
+              className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none resize-none"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Coordinates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label style={labelStyle}>Longitude</label>
+              <input
+                type="text"
+                value={form.longitude}
+                onChange={(e) => handleChange("longitude", e.target.value)}
+                placeholder="e.g. 35.50"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Latitude</label>
+              <input
+                type="text"
+                value={form.latitude}
+                onChange={(e) => handleChange("latitude", e.target.value)}
+                placeholder="e.g. 33.89"
+                className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 mt-2">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-semibold tracking-wider uppercase transition-all duration-200"
+              style={{
+                color: "#8892a4",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: "2px",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!form.name.trim() || !form.organization.trim()}
+              className="px-5 py-2 text-sm font-bold tracking-wider uppercase text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "var(--crimson)", borderRadius: "2px" }}
+            >
+              Add Stakeholder
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type ViewMode = "list" | "map";
 
@@ -350,7 +450,7 @@ function ContactInfo({ contact }: { contact?: string }) {
   if (!contact) return null;
   const isEmail = contact.includes("@") && !contact.includes("/");
   const href = isEmail ? `mailto:${contact}` : contact;
-  const display = contact.length > 40 ? contact.slice(0, 37) + "…" : contact;
+  const display = contact.length > 40 ? contact.slice(0, 37) + "\u2026" : contact;
 
   return (
     <div className="flex items-center gap-1.5 mt-1">
@@ -465,7 +565,7 @@ function StakeholderCard({ stakeholder }: { stakeholder: Stakeholder }) {
         <ul className="flex flex-col gap-1.5">
           {stakeholder.key_positions.map((pos, i) => (
             <li key={i} className="flex gap-2 text-sm" style={{ color: "#b0bac8" }}>
-              <span style={{ color: "var(--crimson)", marginTop: "1px" }}>›</span>
+              <span style={{ color: "var(--crimson)", marginTop: "1px" }}>{"\u203A"}</span>
               {pos}
             </li>
           ))}
@@ -528,7 +628,7 @@ export default function DiscoverPage() {
       return;
     }
 
-    // ── Batch 1: fetch the first 10-12 high-priority stakeholders ────────
+    // — Batch 1: fetch the first 10-12 high-priority stakeholders —
     let batch1: Stakeholder[] = [];
     try {
       const res = await fetch("/api/discover", {
@@ -560,7 +660,7 @@ export default function DiscoverPage() {
     setLoading(false);
     setLoadingMore(true);
 
-    // ── Batch 2: fetch additional 10-12 lesser-known stakeholders ─────────
+    // — Batch 2: fetch additional 10-12 lesser-known stakeholders —
     try {
       const existingNames = batch1.map((s) => s.name);
       const res = await fetch("/api/discover", {
@@ -753,7 +853,7 @@ export default function DiscoverPage() {
                     (e.target as HTMLElement).style.background = "var(--crimson)";
                 }}
               >
-                {loading ? "Analysing…" : "Analyse"}
+                {loading ? "Analysing\u2026" : "Analyse"}
               </button>
             </div>
             <p className="text-xs" style={{ color: "#4a5568" }}>
@@ -773,7 +873,7 @@ export default function DiscoverPage() {
             <p className="text-sm" style={{ color: "#8892a4" }}>
               Searching and analysing stakeholders for{" "}
               <strong className="text-white">{lastQuery?.sector}</strong> in{" "}
-              <strong className="text-white">{lastQuery?.region}</strong>…
+              <strong className="text-white">{lastQuery?.region}</strong>{"\u2026"}
             </p>
           </div>
         )}
@@ -956,7 +1056,7 @@ export default function DiscoverPage() {
                   style={{ borderColor: "var(--crimson)", borderTopColor: "transparent" }}
                 />
                 <p className="text-sm" style={{ color: "#8892a4" }}>
-                  Discovering additional regional and local stakeholders…
+                  Discovering additional regional and local stakeholders{"\u2026"}
                 </p>
               </div>
             )}
@@ -991,7 +1091,7 @@ export default function DiscoverPage() {
                       style={{ borderColor: "var(--crimson)", borderTopColor: "transparent" }}
                     />
                     <p className="text-sm" style={{ color: "#8892a4" }}>
-                      Discovering additional stakeholders…
+                      Discovering additional stakeholders{"\u2026"}
                     </p>
                   </div>
                 )}
@@ -1046,6 +1146,7 @@ export default function DiscoverPage() {
       >
         Powered by Claude AI · Stakeholder Intelligence Platform
       </footer>
+
       {/* Add Stakeholder Modal */}
       {showAddModal && (
         <AddStakeholderModal
