@@ -200,7 +200,7 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
       type: form.type, category: form.category, influence_score: form.influence_score, stance: form.stance,
       key_positions: [form.key_position_1.trim() || "To be defined", form.key_position_2.trim() || "To be defined", form.key_position_3.trim() || "To be defined"],
       engagement_recommendation: form.engagement_recommendation.trim() || "To be defined",
-      contact: form.contact.trim(), coordinates: [parseFloat(form.longitude) || 0, parseFloat(form.latitude) || 0], sources: [],
+      contact: form.contact.trim(), coordinates: [parseFloat(form.longitude) || 0, parseFloat(form.latitude) || 0], sources: [], source_years: [], generated_date: new Date().toISOString().slice(0, 10),
     });
     onClose();
   };
