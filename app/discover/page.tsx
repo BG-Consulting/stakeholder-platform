@@ -395,57 +395,73 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
   const typeColor = TYPE_COLORS[stakeholder.type];
   const hasEngagement = engagementEntries.length > 0;
 
+  // Fix 1: Use a fixed height so absolute children have something to fill
+  // Fix 2: overflow-y-auto on front content so long text scrolls instead of overflowing
   return (
-    <div style={{ perspective: "1200px", minHeight: "420px" }}>
+    <div style={{ perspective: "1200px", height: "520px" }}>
       <div style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d", transition: "transform 0.55s cubic-bezier(0.4,0.2,0.2,1)", transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}>
 
         {/* FRONT */}
-        <div className="flex flex-col gap-4 p-5 rounded absolute inset-0"
-          style={{ background: T.cardBg, border: `1px solid ${T.border}`, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transition: "border-color 0.2s, box-shadow 0.2s" }}
+        <div
+          style={{ position: "absolute", inset: 0, background: T.cardBg, border: `1px solid ${T.border}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.2s, box-shadow 0.2s", overflow: "hidden" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = T.crimsonBorder; e.currentTarget.style.boxShadow = "0 4px 20px rgba(203,51,59,0.1)"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
         >
-          <div>
-            <h3 className="font-bold text-base" style={{ color: T.navyDark }}>{stakeholder.name}</h3>
-            <p className="text-sm mt-0.5" style={{ color: T.navyMid }}>{stakeholder.organization}</p>
-            <p className="text-xs mt-0.5"><span style={{ color: T.navyLight }}>Current: </span><span style={{ color: T.navyMid }}>{stakeholder.current_officeholder ?? "To be verified"}</span></p>
-            <ContactInfo contact={stakeholder.contact} />
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide" style={{ background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30` }}>{TYPE_LABELS[stakeholder.type]}</span>
-              {stakeholder.category && <span className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wide" style={{ background: `${CATEGORY_COLORS[stakeholder.category]}15`, color: CATEGORY_COLORS[stakeholder.category], border: `1px solid ${CATEGORY_COLORS[stakeholder.category]}30` }}>{stakeholder.category}</span>}
-              {stakeholder.sources?.[0] === "Uploaded document" && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>From document</span>}
-              {hasEngagement && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>{engagementEntries.length} logged</span>}
+          {/* Scrollable content area */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <h3 className="font-bold text-base" style={{ color: T.navyDark }}>{stakeholder.name}</h3>
+              <p className="text-sm mt-0.5" style={{ color: T.navyMid }}>{stakeholder.organization}</p>
+              <p className="text-xs mt-0.5"><span style={{ color: T.navyLight }}>Current: </span><span style={{ color: T.navyMid }}>{stakeholder.current_officeholder ?? "To be verified"}</span></p>
+              <ContactInfo contact={stakeholder.contact} />
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide" style={{ background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30` }}>{TYPE_LABELS[stakeholder.type]}</span>
+                {stakeholder.category && <span className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wide" style={{ background: `${CATEGORY_COLORS[stakeholder.category]}15`, color: CATEGORY_COLORS[stakeholder.category], border: `1px solid ${CATEGORY_COLORS[stakeholder.category]}30` }}>{stakeholder.category}</span>}
+                {stakeholder.sources?.[0] === "Uploaded document" && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>From document</span>}
+                {hasEngagement && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>{engagementEntries.length} logged</span>}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="px-2.5 py-1 rounded text-xs font-semibold" style={{ background: stance.bg, color: stance.text, border: `1px solid ${stance.border}` }}>{stance.label}</span>
+              <InfluenceBar score={stakeholder.influence_score} />
+            </div>
+            <div style={{ borderTop: `1px solid ${T.border}` }} />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Key Positions</p>
+              <ul className="flex flex-col gap-1.5">{stakeholder.key_positions.map((pos, i) => <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}><span style={{ color: T.crimson, marginTop: "1px" }}>›</span><span>{pos}</span></li>)}</ul>
+            </div>
+            <div style={{ borderTop: `1px solid ${T.border}` }} />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.navyLight }}>Engagement Strategy</p>
+              <p className="text-sm" style={{ color: T.navyMid }}>{stakeholder.engagement_recommendation}</p>
             </div>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="px-2.5 py-1 rounded text-xs font-semibold" style={{ background: stance.bg, color: stance.text, border: `1px solid ${stance.border}` }}>{stance.label}</span>
-            <InfluenceBar score={stakeholder.influence_score} />
+          {/* Sticky footer with flip button */}
+          <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={() => setFlipped(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase hover:opacity-70 transition-opacity"
+              style={{ color: T.navyLight }}
+            >
+              Sources & Log
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
           </div>
-          <div style={{ borderTop: `1px solid ${T.border}` }} />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Key Positions</p>
-            <ul className="flex flex-col gap-1.5">{stakeholder.key_positions.map((pos, i) => <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}><span style={{ color: T.crimson, marginTop: "1px" }}>›</span>{pos}</li>)}</ul>
-          </div>
-          <div style={{ borderTop: `1px solid ${T.border}` }} />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.navyLight }}>Engagement Strategy</p>
-            <p className="text-sm" style={{ color: T.navyMid }}>{stakeholder.engagement_recommendation}</p>
-          </div>
-          <button onClick={() => setFlipped(true)} className="mt-auto self-end flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase hover:opacity-70 transition-opacity" style={{ color: T.navyLight }}>
-            Sources & Log <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          </button>
         </div>
 
         {/* BACK */}
-        <div className="flex flex-col absolute inset-0 rounded" style={{ background: T.white, border: `1px solid ${T.indigoBorder}`, backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-          <div className="px-4 pt-4 pb-0 flex items-center justify-between">
+        <div style={{ position: "absolute", inset: 0, background: T.white, border: `1px solid ${T.indigoBorder}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Back header */}
+          <div style={{ padding: "16px 16px 0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div className="flex gap-0 rounded overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
               <button onClick={() => setBackTab("sources")} className="px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all" style={{ background: backTab === "sources" ? T.crimsonBg : "transparent", color: backTab === "sources" ? T.crimson : T.navyLight }}>QA Sources</button>
               <button onClick={() => setBackTab("engagement")} className="px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all" style={{ background: backTab === "engagement" ? T.indigoBg : "transparent", color: backTab === "engagement" ? T.indigo : T.navyLight }}>Engagement {hasEngagement ? `(${engagementEntries.length})` : ""}</button>
             </div>
             <button onClick={() => setFlipped(false)} style={{ color: T.navyLight }} className="hover:opacity-70"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+
+          {/* Back scrollable content */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
             {backTab === "sources" && (
               <div className="flex flex-col gap-3">
                 <div className="flex items-start gap-2 px-3 py-2 rounded text-xs" style={{ background: T.yellowBg, border: `1px solid ${T.yellowBorder}`, color: T.yellow }}>
@@ -453,7 +469,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                   Verify each source independently before client use.
                 </div>
                 {(!stakeholder.sources || stakeholder.sources.length === 0)
-                  ? <p className="text-sm text-center py-6" style={{ color: T.navyLight }}>No sources available.</p>
+                  ? <p className="text-sm text-center py-6" style={{ color: T.navyLight }}>No sources available for this stakeholder.</p>
                   : stakeholder.sources.map((src, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
                       <span className="text-xs font-bold mt-0.5 shrink-0" style={{ color: T.crimson }}>{i+1}</span>
@@ -463,30 +479,45 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                 }
               </div>
             )}
+
+            {/* Fix 3: Engagement tab always shows full log button that opens modal for editing */}
             {backTab === "engagement" && (
               <div className="flex flex-col gap-3">
-                {engagementEntries.length === 0
-                  ? <div className="text-center py-6" style={{ color: T.navyLight }}><p className="text-sm">No interactions logged yet.</p></div>
-                  : engagementEntries.slice(0,3).map(entry => {
-                    const oc = OUTCOME_COLORS[entry.outcome];
-                    return (
-                      <div key={entry.id} className="rounded p-3" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} · {entry.date}</span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
+                {engagementEntries.length === 0 ? (
+                  <div className="text-center py-4" style={{ color: T.navyLight }}>
+                    <p className="text-sm mb-3">No interactions logged yet.</p>
+                    <button onClick={onOpenEngagement} className="px-4 py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
+                      Log First Interaction
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {engagementEntries.slice(0, 3).map(entry => {
+                      const oc = OUTCOME_COLORS[entry.outcome];
+                      return (
+                        <div key={entry.id} className="rounded p-3" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} · {entry.date}</span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
+                          </div>
+                          <p className="text-xs leading-relaxed" style={{ color: T.navyMid, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{entry.notes}</p>
                         </div>
-                        <p className="text-xs leading-relaxed line-clamp-3" style={{ color: T.navyMid }}>{entry.notes}</p>
-                      </div>
-                    );
-                  })
-                }
-                <button onClick={onOpenEngagement} className="w-full py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
-                  {engagementEntries.length === 0 ? "Log First Interaction" : "View & Edit Full Log"}
-                </button>
+                      );
+                    })}
+                    {engagementEntries.length > 3 && (
+                      <p className="text-xs text-center" style={{ color: T.navyLight }}>+{engagementEntries.length - 3} more entries</p>
+                    )}
+                    <button onClick={onOpenEngagement} className="w-full py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
+                      ✏️ Edit & Add Interactions
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
-          <div className="px-4 py-3" style={{ borderTop: `1px solid ${T.border}` }}>
+
+          {/* Back footer */}
+          <div style={{ padding: "10px 16px", borderTop: `1px solid ${T.border}`, flexShrink: 0 }}>
             <p className="text-xs font-semibold truncate" style={{ color: T.navyDark }}>{stakeholder.name}</p>
             <p className="text-[10px]" style={{ color: T.navyLight }}>{stakeholder.organization}</p>
           </div>
