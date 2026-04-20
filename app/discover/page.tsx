@@ -437,7 +437,21 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
             </div>
           </div>
           {/* Sticky footer with flip button */}
-          <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {/* Generated date stamp */}
+            {stakeholder.generated_date && (() => {
+              const genDate = new Date(stakeholder.generated_date);
+              const ageMs = Date.now() - genDate.getTime();
+              const ageMonths = ageMs / (1000 * 60 * 60 * 24 * 30);
+              const isStale = ageMonths > 12;
+              return (
+                <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: isStale ? T.red : T.navyLight }}>
+                  {isStale && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>}
+                  Generated {genDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  {isStale && " · Verify currency"}
+                </span>
+              );
+            })()}
             <button
               onClick={() => setFlipped(true)}
               className="flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase hover:opacity-70 transition-opacity"
@@ -468,15 +482,52 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                   <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
                   Verify each source independently before client use.
                 </div>
-                {(!stakeholder.sources || stakeholder.sources.length === 0)
-                  ? <p className="text-sm text-center py-6" style={{ color: T.navyLight }}>No sources available for this stakeholder.</p>
-                  : stakeholder.sources.map((src, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
-                      <span className="text-xs font-bold mt-0.5 shrink-0" style={{ color: T.crimson }}>{i+1}</span>
-                      {src.startsWith("http") ? <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs break-all hover:underline" style={{ color: "#0369a1" }}>{src}</a> : <p className="text-xs" style={{ color: T.navyMid }}>{src}</p>}
-                    </div>
-                  ))
-                }
+                {(!stakeholder.sources || stakeholder.sources.length === 0) ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-center py-2" style={{ color: T.navyLight }}>No specific sources returned — search manually:</p>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(stakeholder.name + " " + stakeholder.organization)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-3 rounded hover:opacity-80 transition-opacity"
+                      style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, color: T.indigo, textDecoration: "none" }}
+                    >
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      <span className="text-xs font-semibold">Search: {stakeholder.name}</span>
+                    </a>
+                    {stakeholder.contact?.startsWith("http") && (
+                      <a
+                        href={stakeholder.contact}
+                        target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 rounded hover:opacity-80 transition-opacity"
+                        style={{ background: T.cardBg, border: `1px solid ${T.border}`, color: "#0369a1", textDecoration: "none" }}
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
+                        <span className="text-xs font-semibold break-all">{stakeholder.contact}</span>
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  stakeholder.sources.map((src, i) => {
+                    const year = stakeholder.source_years?.[i] ?? null;
+                    const currentYear = new Date().getFullYear();
+                    const isOld = year !== null && currentYear - year > 1;
+                    return (
+                      <div key={i} className="flex flex-col gap-1.5 p-3 rounded" style={{ background: T.cardBg, border: `1px solid ${isOld ? T.yellowBorder : T.border}` }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold shrink-0" style={{ color: T.crimson }}>Source {i + 1}</span>
+                          {year !== null ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: isOld ? T.yellowBg : T.greenBg, color: isOld ? T.yellow : T.green, border: `1px solid ${isOld ? T.yellowBorder : T.greenBorder}` }}>
+                              {year} {isOld && "· May be outdated"}
+                            </span>
+                          ) : (
+                            <span className="text-[10px]" style={{ color: T.navyLight }}>Year unknown</span>
+                          )}
+                        </div>
+                        <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs break-all hover:underline leading-relaxed" style={{ color: "#0369a1" }}>{src}</a>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
 
