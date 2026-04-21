@@ -64,20 +64,23 @@ const FIELD_SCHEMA = `Each object must have exactly these fields:
 const existing = (names: string[]) =>
   `You have already identified these stakeholders:\n${names.map(n => `- ${n}`).join("\n")}\n\nDo NOT duplicate any of them.\n\n`;
 
-const batch1Prompt = (sector: string, region: string) =>
-  `Identify 8-10 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
+const objectivesClause = (objectives?: string) =>
+  objectives?.trim() ? `\n\nProject Objectives: ${objectives.trim()}\nEnsure all stakeholders are directly relevant to these objectives.` : "";
+
+const batch1Prompt = (sector: string, region: string, objectives?: string) =>
+  `Identify 8-10 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.${objectivesClause(objectives)}
 
 Focus exclusively on:
 1. Government & Regulatory — key national ministries, cabinet-level officials, top regulators, parliamentary committees
 2. International Organizations & Donors — major UN agencies, World Bank, IMF, regional development banks, bilateral aid programmes
 3. Civil Society & NGOs — the most prominent national-level advocacy organisations
 
-Return 12-15 stakeholders. Cover all 3 categories above.
+Return 8-10 stakeholders. Cover all 3 categories above.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
-const batch2Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+const batch2Prompt = (sector: string, region: string, existingNames: string[], objectives?: string) =>
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.${objectivesClause(objectives)}
 
 Focus exclusively on:
 1. Private Sector — major corporations, leading industry associations, chambers of commerce at national level
@@ -88,8 +91,8 @@ Return 8-10 stakeholders. Cover all 3 categories above.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
-const batch3Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+const batch3Prompt = (sector: string, region: string, existingNames: string[], objectives?: string) =>
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.${objectivesClause(objectives)}
 
 Focus exclusively on LOCAL AND REGIONAL actors — go deep into sub-national level:
 1. Government & Regulatory — municipal authorities, district/provincial governments, local regulatory bodies, local elected officials
@@ -101,8 +104,8 @@ Return 8-10 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
-const batch4Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+const batch4Prompt = (sector: string, region: string, existingNames: string[], objectives?: string) =>
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.${objectivesClause(objectives)}
 
 Focus exclusively on INFORMAL INFLUENCERS AND COMMUNITY VOICES — actors who may not have formal institutional power but shape opinion and implementation:
 1. Religious leaders, traditional leaders, community elders with influence over the ${sector} sector
@@ -116,8 +119,8 @@ Return 8-10 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
-const batch5Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+const batch5Prompt = (sector: string, region: string, existingNames: string[], objectives?: string) =>
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.${objectivesClause(objectives)}
 
 Focus exclusively on LOCAL ECONOMIC ACTORS AND LABOUR:
 1. Local SMEs and small business associations operating in the ${sector} space
@@ -162,16 +165,17 @@ async function generateStakeholders(
   region: string,
   batch: 1 | 2 | 3 | 4 | 5,
   existingNames: string[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  objectives?: string
 ): Promise<Stakeholder[]> {
   console.log(`[discover] batch ${batch} — generating stakeholder list...`);
 
   const userPrompt =
-    batch === 1 ? batch1Prompt(sector, region) :
-    batch === 2 ? batch2Prompt(sector, region, existingNames) :
-    batch === 3 ? batch3Prompt(sector, region, existingNames) :
-    batch === 4 ? batch4Prompt(sector, region, existingNames) :
-                  batch5Prompt(sector, region, existingNames);
+    batch === 1 ? batch1Prompt(sector, region, objectives) :
+    batch === 2 ? batch2Prompt(sector, region, existingNames, objectives) :
+    batch === 3 ? batch3Prompt(sector, region, existingNames, objectives) :
+    batch === 4 ? batch4Prompt(sector, region, existingNames, objectives) :
+                  batch5Prompt(sector, region, existingNames, objectives);
 
   const response = await client.messages.create(
     {
@@ -334,20 +338,21 @@ async function resolveOfficeholders(
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
-  let body: { sector?: string; region?: string; batch?: number; existingNames?: string[] };
+  let body: { sector?: string; region?: string; objectives?: string; batch?: number; existingNames?: string[] };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { sector, region } = body;
+  const { sector, region, objectives } = body;
   if (!sector?.trim() || !region?.trim()) {
     return NextResponse.json({ error: "sector and region are required" }, { status: 400 });
   }
 
   const s = sector.trim();
   const r = region.trim();
+  const o = objectives?.trim();
   const batchNum = body.batch;
   const batch: 1 | 2 | 3 | 4 | 5 =
     batchNum === 1 ? 1 :
@@ -368,7 +373,7 @@ export async function POST(request: NextRequest) {
   try {
     let stakeholders: Stakeholder[];
     try {
-      stakeholders = await generateStakeholders(s, r, batch, existingNames, controller.signal);
+      stakeholders = await generateStakeholders(s, r, batch, existingNames, controller.signal, o);
     } catch (err) {
       clearTimeout(timeoutId);
       if (controller.signal.aborted) {

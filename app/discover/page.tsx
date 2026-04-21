@@ -356,7 +356,10 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
 
 // ─── Stakeholder Card ─────────────────────────────────────────────────────────
 
-function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: { stakeholder: Stakeholder; engagementEntries: EngagementEntry[]; onOpenEngagement: () => void }) {
+function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement, onDismiss }: {
+  stakeholder: Stakeholder; engagementEntries: EngagementEntry[];
+  onOpenEngagement: () => void; onDismiss: () => void;
+}) {
   const [flipped, setFlipped] = useState(false);
   const [backTab, setBackTab] = useState<"sources"|"engagement">("sources");
   const stance = STANCE_CONFIG[stakeholder.stance];
@@ -371,8 +374,19 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
         <div style={{ position: "absolute", inset: 0, background: T.cardBg, border: `1px solid ${T.border}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.2s, box-shadow 0.2s", overflow: "hidden" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = T.crimsonBorder; e.currentTarget.style.boxShadow = "0 4px 20px rgba(203,51,59,0.1)"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}>
+
+          {/* Dismiss button */}
+          <button
+            onClick={onDismiss}
+            title="Dismiss stakeholder"
+            className="absolute top-3 right-3 z-10 flex items-center justify-center w-6 h-6 rounded-full transition-all hover:opacity-100 opacity-40"
+            style={{ background: T.redBg, color: T.red, border: `1px solid ${T.redBorder}` }}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div>
+            <div style={{ paddingRight: "20px" }}>
               <h3 className="font-bold text-base" style={{ color: T.navyDark }}>{stakeholder.name}</h3>
               <p className="text-sm mt-0.5" style={{ color: T.navyMid }}>{stakeholder.organization}</p>
               <p className="text-xs mt-0.5"><span style={{ color: T.navyLight }}>Current: </span><span style={{ color: T.navyMid }}>{stakeholder.current_officeholder ?? "To be verified"}</span></p>
@@ -380,7 +394,6 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 <span className="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide" style={{ background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30` }}>{TYPE_LABELS[stakeholder.type]}</span>
                 {stakeholder.category && <span className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wide" style={{ background: `${CATEGORY_COLORS[stakeholder.category]}15`, color: CATEGORY_COLORS[stakeholder.category], border: `1px solid ${CATEGORY_COLORS[stakeholder.category]}30` }}>{stakeholder.category}</span>}
-                {stakeholder.sources?.[0] === "Uploaded document" && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>From document</span>}
                 {hasEngagement && <span className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>{engagementEntries.length} logged</span>}
               </div>
             </div>
@@ -509,148 +522,257 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
   );
 }
 
-// ─── HTML Export ──────────────────────────────────────────────────────────────
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+
+function exportToCSV(
+  stakeholders: Stakeholder[],
+  query: { sector: string; region: string; objectives?: string },
+  engagementLog: Record<string, EngagementEntry[]>
+) {
+  const escape = (v: string | number | null | undefined) => {
+    const s = String(v ?? "");
+    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const rows: string[][] = [];
+
+  // Stakeholders sheet (all in one CSV)
+  rows.push(["STAKEHOLDER INTELLIGENCE REPORT"]);
+  rows.push([`Sector: ${query.sector}`, `Region: ${query.region}`, query.objectives ? `Objectives: ${query.objectives}` : ""]);
+  rows.push([`Generated: ${new Date().toLocaleDateString("en-GB")}`]);
+  rows.push([]);
+  rows.push(["#","Name / Role","Organization","Current Officeholder","Category","Type","Stance","Influence Score","Key Position 1","Key Position 2","Key Position 3","Engagement Recommendation","Contact","Interactions Logged","Sources","Generated Date"]);
+
+  const sorted = [...stakeholders].sort((a, b) => b.influence_score - a.influence_score);
+  sorted.forEach((s, i) => {
+    rows.push([
+      String(i + 1), s.name, s.organization, s.current_officeholder ?? "To be verified",
+      s.category ?? "", TYPE_LABELS[s.type],
+      s.stance.charAt(0).toUpperCase() + s.stance.slice(1),
+      String(s.influence_score),
+      s.key_positions[0] ?? "", s.key_positions[1] ?? "", s.key_positions[2] ?? "",
+      s.engagement_recommendation ?? "", s.contact ?? "",
+      String((engagementLog[s.name] ?? []).length),
+      (s.sources ?? []).join(" | "),
+      s.generated_date ?? "",
+    ]);
+  });
+
+  if (Object.values(engagementLog).flat().length > 0) {
+    rows.push([]);
+    rows.push(["ENGAGEMENT LOG"]);
+    rows.push(["Stakeholder","Date","Type","Outcome","Notes"]);
+    Object.values(engagementLog).flat().sort((a,b) => b.date.localeCompare(a.date)).forEach(e => {
+      rows.push([e.stakeholderName, e.date, e.type, e.outcome, e.notes]);
+    });
+  }
+
+  const csv = rows.map(r => r.map(escape).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safe = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_");
+  a.href = url; a.download = `BeyondGroup_Stakeholder_Map_${safe(query.sector)}_${safe(query.region)}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ─── HTML Report Export ───────────────────────────────────────────────────────
 
 function exportToHTML(
   stakeholders: Stakeholder[],
-  query: { sector: string; region: string },
+  query: { sector: string; region: string; objectives?: string },
   engagementLog: Record<string, EngagementEntry[]>
 ) {
   const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   const sorted = [...stakeholders].sort((a, b) => b.influence_score - a.influence_score);
   const allEntries = Object.values(engagementLog).flat().sort((a, b) => b.date.localeCompare(a.date));
-  const CAT_COLORS_HEX: Record<string, string> = {
+  const CAT_HEX: Record<string, string> = {
     "Government & Regulatory": "#1d4ed8", "Private Sector": "#0f766e",
     "Civil Society & NGOs": "#7e22ce", "Media & Communications": "#b45309",
     "Academic & Research": "#0369a1", "International Organizations & Donors": "#0d9488",
   };
   const catGroups: Record<string, Stakeholder[]> = {};
   for (const s of sorted) { const c = s.category || "Uncategorized"; (catGroups[c] = catGroups[c] || []).push(s); }
-  const stanceCount = { supportive: stakeholders.filter(s => s.stance === "supportive").length, neutral: stakeholders.filter(s => s.stance === "neutral").length, opposed: stakeholders.filter(s => s.stance === "opposed").length };
+  const sc = { sup: stakeholders.filter(s => s.stance === "supportive").length, neu: stakeholders.filter(s => s.stance === "neutral").length, opp: stakeholders.filter(s => s.stance === "opposed").length };
   const bands = [
     { label: "Very High (9–10)", min: 9, max: 10 }, { label: "High (7–8)", min: 7, max: 8 },
     { label: "Medium (5–6)", min: 5, max: 6 }, { label: "Low (3–4)", min: 3, max: 4 }, { label: "Minimal (1–2)", min: 1, max: 2 },
   ];
-  const stanceStyle = (s: string) => s === "supportive" ? "background:#e6f4ea;color:#166534;font-weight:700" : s === "opposed" ? "background:#fdecea;color:#991b1b;font-weight:700" : "background:#fff8e1;color:#854d0e;font-weight:700";
+  const ss = (s: string) => s === "supportive" ? "background:#e6f4ea;color:#166534;font-weight:700" : s === "opposed" ? "background:#fdecea;color:#991b1b;font-weight:700" : "background:#fff8e1;color:#854d0e;font-weight:700";
   const dots = (score: number) => Array.from({ length: 10 }).map((_, i) => `<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${i < score ? (i < 4 ? "#cb333b" : i < 7 ? "#f59e0b" : "#ef4444") : "#d0d3d4"};margin-right:1px"></span>`).join("") + `<span style="font-size:10px;color:#7a92a8;margin-left:4px">${score}/10</span>`;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stakeholder Report — ${query.sector}, ${query.region}</title>
+  const catTabIds = Object.keys(catGroups).map((c, i) => `cat${i}`);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Stakeholder Report — ${query.sector}, ${query.region}</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:Calibri,Arial,sans-serif;font-size:13px;color:#003057;background:#f4f5f7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Calibri,Arial,sans-serif;font-size:13px;color:#003057;background:#f4f5f7}
+.tab-bar{position:sticky;top:0;z-index:100;background:#003057;display:flex;gap:0;overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.tab-btn{padding:12px 20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.6);cursor:pointer;border:none;background:transparent;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s}
+.tab-btn:hover{color:white;background:rgba(255,255,255,.1)}
+.tab-btn.active{color:white;border-bottom:3px solid #cb333b;background:rgba(255,255,255,.08)}
+.tab-content{display:none}.tab-content.active{display:block}
 .page{max-width:1200px;margin:0 auto;padding:40px 32px}
-.cover-header{background:#003057;color:white;padding:36px 40px 24px;border-radius:6px 6px 0 0}
-.cover-header h1{font-size:26px;font-weight:700}.cover-sub{background:#cb333b;color:white;padding:10px 40px;font-size:14px;font-weight:600;border-radius:0 0 6px 6px;margin-bottom:28px}
-.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.meta-box{background:white;border:1px solid rgba(0,48,87,0.12);border-radius:4px;padding:14px 18px}
-.meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#cb333b;margin-bottom:3px}
-.meta-value{font-size:15px;font-weight:700;color:#003057}
-.stance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
-.stance-box{padding:14px;border-radius:4px;text-align:center}.stance-box .count{font-size:30px;font-weight:700}.stance-box .label{font-size:11px;font-weight:700;text-transform:uppercase;margin-top:2px}
-.section-title{background:#003057;color:white;padding:9px 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-radius:4px;margin:28px 0 10px}
-table{width:100%;border-collapse:collapse;background:white;border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,48,87,.08);margin-bottom:8px}
-th{background:#cb333b;color:white;padding:8px 11px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left}
-td{padding:9px 11px;border-bottom:1px solid rgba(0,48,87,.07);font-size:12px;vertical-align:top;line-height:1.5}
-tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#f4f5f7}tr:nth-child(odd) td{background:white}
-.matrix-th-band{background:#003057}.matrix-th-sup{background:#166534}.matrix-th-neu{background:#854d0e}.matrix-th-opp{background:#991b1b}
+.cover-header{background:#003057;color:white;padding:48px 48px 32px;border-radius:8px 8px 0 0}
+.cover-header h1{font-size:32px;font-weight:700;margin-bottom:8px}
+.cover-sub{background:#cb333b;color:white;padding:12px 48px;font-size:14px;font-weight:600;border-radius:0 0 8px 8px;margin-bottom:32px}
+.meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
+.meta-box{background:white;border:1px solid rgba(0,48,87,0.12);border-radius:6px;padding:16px 20px}
+.meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#cb333b;margin-bottom:4px}
+.meta-value{font-size:16px;font-weight:700;color:#003057}
+.stance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.stance-box{padding:20px;border-radius:6px;text-align:center}
+.stance-box .count{font-size:40px;font-weight:700;line-height:1}
+.stance-box .lbl{font-size:12px;font-weight:700;text-transform:uppercase;margin-top:6px}
+.section-title{background:#003057;color:white;padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-radius:4px;margin:28px 0 12px}
+table{width:100%;border-collapse:collapse;background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 6px rgba(0,48,87,.1);margin-bottom:12px}
+th{background:#cb333b;color:white;padding:9px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left}
+td{padding:10px 12px;border-bottom:1px solid rgba(0,48,87,.07);font-size:12px;vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#f4f5f7}
 .matrix-band{background:#003057!important;color:white;font-weight:700;font-size:11px}
-.matrix-sup{background:#e6f4ea!important;color:#166534}.matrix-neu{background:#fff8e1!important;color:#854d0e}.matrix-opp{background:#fdecea!important;color:#991b1b}
-.warn{background:#fff8e1;border:1px solid rgba(180,83,9,.3);color:#854d0e;padding:10px 14px;border-radius:4px;font-size:12px;font-weight:600;margin-bottom:24px}
-.footer{margin-top:40px;padding-top:14px;border-top:1px solid rgba(0,48,87,.12);color:#7a92a8;font-size:11px;display:flex;justify-content:space-between}
-</style></head><body><div class="page">
+.matrix-sup{background:#e6f4ea!important;color:#166534}
+.matrix-neu{background:#fff8e1!important;color:#854d0e}
+.matrix-opp{background:#fdecea!important;color:#991b1b}
+.warn{background:#fff8e1;border:1px solid rgba(180,83,9,.3);color:#854d0e;padding:12px 16px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:24px}
+.footer{margin-top:48px;padding-top:16px;border-top:1px solid rgba(0,48,87,.12);color:#7a92a8;font-size:11px;display:flex;justify-content:space-between}
+.cat-header{padding:10px 16px;color:white;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:4px;margin:0 0 12px}
+@media print{.tab-bar{display:none}.tab-content{display:block!important}}
+</style></head><body>
 
-<div class="cover-header">
-  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px">Beyond Group Consulting</div>
-  <h1>Stakeholder Intelligence Report</h1>
-  <div style="margin-top:6px;font-size:14px;color:rgba(255,255,255,.8)">${query.sector} &nbsp;·&nbsp; ${query.region}</div>
-</div>
-<div class="cover-sub">Confidential — Prepared for client use &nbsp;·&nbsp; Generated ${now}</div>
-
-<div class="meta-grid">
-  <div class="meta-box"><div class="meta-label">Sector</div><div class="meta-value">${query.sector}</div></div>
-  <div class="meta-box"><div class="meta-label">Region</div><div class="meta-value">${query.region}</div></div>
-  <div class="meta-box"><div class="meta-label">Total Stakeholders</div><div class="meta-value">${stakeholders.length}</div></div>
-  <div class="meta-box"><div class="meta-label">Date Generated</div><div class="meta-value">${now}</div></div>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('cover')">Cover</button>
+  <button class="tab-btn" onclick="showTab('overview')">Overview</button>
+  ${Object.keys(catGroups).map((cat, i) => `<button class="tab-btn" onclick="showTab('cat${i}')">${cat.split(" & ")[0].split(" ")[0]}</button>`).join("")}
+  <button class="tab-btn" onclick="showTab('matrix')">Influence Matrix</button>
+  ${allEntries.length > 0 ? `<button class="tab-btn" onclick="showTab('engagement')">Engagement</button>` : ""}
 </div>
 
-<div class="stance-grid">
-  <div class="stance-box" style="background:#e6f4ea;color:#166534"><div class="count">${stanceCount.supportive}</div><div class="label">Supportive</div></div>
-  <div class="stance-box" style="background:#fff8e1;color:#854d0e"><div class="count">${stanceCount.neutral}</div><div class="label">Neutral</div></div>
-  <div class="stance-box" style="background:#fdecea;color:#991b1b"><div class="count">${stanceCount.opposed}</div><div class="label">Opposed</div></div>
-</div>
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
 
-<div class="warn">&#9888;&#65039; AI-assisted research — verify all information before use in client engagements.</div>
+<!-- COVER -->
+<div id="cover" class="tab-content active">
+<div class="page">
+  <div class="cover-header">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px">Beyond Group Consulting</div>
+    <h1>Stakeholder Intelligence Report</h1>
+    <div style="font-size:16px;color:rgba(255,255,255,.8);margin-top:4px">${query.sector} &nbsp;·&nbsp; ${query.region}</div>
+    ${query.objectives ? `<div style="font-size:13px;color:rgba(255,255,255,.65);margin-top:8px;font-style:italic">Objectives: ${query.objectives}</div>` : ""}
+  </div>
+  <div class="cover-sub">Confidential — Prepared for client use &nbsp;·&nbsp; Generated ${now}</div>
+  <div class="meta-grid">
+    <div class="meta-box"><div class="meta-label">Sector</div><div class="meta-value">${query.sector}</div></div>
+    <div class="meta-box"><div class="meta-label">Region</div><div class="meta-value">${query.region}</div></div>
+    ${query.objectives ? `<div class="meta-box" style="grid-column:1/-1"><div class="meta-label">Project Objectives</div><div class="meta-value" style="font-size:14px">${query.objectives}</div></div>` : ""}
+    <div class="meta-box"><div class="meta-label">Total Stakeholders</div><div class="meta-value">${stakeholders.length}</div></div>
+    <div class="meta-box"><div class="meta-label">Date Generated</div><div class="meta-value">${now}</div></div>
+  </div>
+  <div class="stance-grid">
+    <div class="stance-box" style="background:#e6f4ea;color:#166534"><div class="count">${sc.sup}</div><div class="lbl">Supportive</div></div>
+    <div class="stance-box" style="background:#fff8e1;color:#854d0e"><div class="count">${sc.neu}</div><div class="lbl">Neutral</div></div>
+    <div class="stance-box" style="background:#fdecea;color:#991b1b"><div class="count">${sc.opp}</div><div class="lbl">Opposed</div></div>
+  </div>
+  <div class="section-title">Category Breakdown</div>
+  <table><thead><tr><th>Category</th><th>Count</th><th>% of Total</th></tr></thead><tbody>
+  ${Object.entries(catGroups).map(([cat, group]) => `<tr><td><span style="background:${CAT_HEX[cat] ?? "#555"}20;color:${CAT_HEX[cat] ?? "#555"};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600">${cat}</span></td><td style="font-weight:700">${group.length}</td><td style="color:#7a92a8">${Math.round(group.length / stakeholders.length * 100)}%</td></tr>`).join("")}
+  </tbody></table>
+  <div class="warn" style="margin-top:24px">&#9888;&#65039; AI-assisted research — verify all information before use in client engagements.</div>
+  <div class="footer"><span>Beyond Group Consulting &nbsp;·&nbsp; Stakeholder Intelligence Platform</span><span>Powered by Claude AI &nbsp;·&nbsp; ${now}</span></div>
+</div></div>
 
-<div class="section-title">Master Overview — All Stakeholders (${stakeholders.length})</div>
-<table><thead><tr><th>#</th><th>Name / Role</th><th>Organization</th><th>Officeholder</th><th>Category</th><th>Stance</th><th>Influence</th><th>Contact</th><th>Interactions</th></tr></thead><tbody>
-${sorted.map((s, i) => `<tr>
-  <td style="color:#7a92a8;font-size:11px">${i + 1}</td>
-  <td style="font-weight:700">${s.name}</td>
-  <td>${s.organization}</td>
-  <td style="color:#4a6080">${s.current_officeholder ?? "To be verified"}</td>
-  <td><span style="background:${CAT_COLORS_HEX[s.category] ?? "#555"}20;color:${CAT_COLORS_HEX[s.category] ?? "#555"};padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600">${s.category ?? ""}</span></td>
-  <td><span style="${stanceStyle(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase() + s.stance.slice(1)}</span></td>
-  <td>${dots(s.influence_score)}</td>
-  <td style="font-size:11px">${s.contact ? `<a href="${s.contact}" style="color:#0369a1">${s.contact.length > 35 ? s.contact.slice(0, 32) + "…" : s.contact}</a>` : "—"}</td>
-  <td style="text-align:center">${(engagementLog[s.name] ?? []).length || "—"}</td>
-</tr>`).join("")}
-</tbody></table>
+<!-- OVERVIEW -->
+<div id="overview" class="tab-content">
+<div class="page">
+  <div class="section-title">Master Overview — All Stakeholders (${stakeholders.length})</div>
+  <table><thead><tr><th>#</th><th>Name / Role</th><th>Organization</th><th>Officeholder</th><th>Category</th><th>Stance</th><th>Influence</th><th>Contact</th><th>Interactions</th></tr></thead><tbody>
+  ${sorted.map((s, i) => `<tr>
+    <td style="color:#7a92a8;font-size:11px">${i+1}</td>
+    <td style="font-weight:700">${s.name}</td>
+    <td>${s.organization}</td>
+    <td style="color:#4a6080">${s.current_officeholder ?? "To be verified"}</td>
+    <td><span style="background:${CAT_HEX[s.category]??"#555"}20;color:${CAT_HEX[s.category]??"#555"};padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600">${s.category??""}</span></td>
+    <td><span style="${ss(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase()+s.stance.slice(1)}</span></td>
+    <td>${dots(s.influence_score)}</td>
+    <td style="font-size:11px">${s.contact?`<a href="${s.contact}" style="color:#0369a1">${s.contact.length>35?s.contact.slice(0,32)+"…":s.contact}</a>`:"—"}</td>
+    <td style="text-align:center">${(engagementLog[s.name]??[]).length||"—"}</td>
+  </tr>`).join("")}
+  </tbody></table>
+  <div class="footer"><span>Beyond Group Consulting</span><span>${now}</span></div>
+</div></div>
 
-${Object.entries(catGroups).map(([cat, group]) => {
-  const color = CAT_COLORS_HEX[cat] ?? "#003057";
-  return `<div class="section-title" style="background:${color}">${cat} (${group.length})</div>
-<table><thead><tr>
-  <th style="background:${color}">Name / Role</th><th style="background:${color}">Organization</th>
-  <th style="background:${color}">Officeholder</th><th style="background:${color}">Stance</th>
-  <th style="background:${color}">Influence</th><th style="background:${color}">Key Position 1</th>
-  <th style="background:${color}">Key Position 2</th><th style="background:${color}">Key Position 3</th>
-  <th style="background:${color}">Engagement Recommendation</th><th style="background:${color}">Sources</th>
-</tr></thead><tbody>
-${group.map(s => `<tr>
-  <td style="font-weight:700">${s.name}</td><td>${s.organization}</td>
-  <td style="color:#4a6080">${s.current_officeholder ?? "To be verified"}</td>
-  <td><span style="${stanceStyle(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase() + s.stance.slice(1)}</span></td>
-  <td>${dots(s.influence_score)}</td>
-  <td>${s.key_positions[0] ?? ""}</td><td>${s.key_positions[1] ?? ""}</td><td>${s.key_positions[2] ?? ""}</td>
-  <td style="color:#4a6080">${s.engagement_recommendation ?? ""}</td>
-  <td style="font-size:11px">${(s.sources ?? []).map(src => `<a href="${src}" style="color:#0369a1;display:block">${src.length > 50 ? src.slice(0, 47) + "…" : src}</a>`).join("") || "—"}</td>
-</tr>`).join("")}
-</tbody></table>`;
+<!-- PER CATEGORY TABS -->
+${Object.entries(catGroups).map(([cat, group], i) => {
+  const color = CAT_HEX[cat] ?? "#003057";
+  return `<div id="cat${i}" class="tab-content">
+<div class="page">
+  <div class="cat-header" style="background:${color}">${cat} — ${group.length} stakeholder${group.length !== 1 ? "s" : ""}</div>
+  <table><thead><tr>
+    <th style="background:${color}">Name / Role</th><th style="background:${color}">Organization</th>
+    <th style="background:${color}">Officeholder</th><th style="background:${color}">Stance</th>
+    <th style="background:${color}">Influence</th><th style="background:${color}">Key Position 1</th>
+    <th style="background:${color}">Key Position 2</th><th style="background:${color}">Key Position 3</th>
+    <th style="background:${color}">Engagement Recommendation</th><th style="background:${color}">Sources</th>
+  </tr></thead><tbody>
+  ${group.map(s => `<tr>
+    <td style="font-weight:700">${s.name}</td><td>${s.organization}</td>
+    <td style="color:#4a6080">${s.current_officeholder??"To be verified"}</td>
+    <td><span style="${ss(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase()+s.stance.slice(1)}</span></td>
+    <td>${dots(s.influence_score)}</td>
+    <td>${s.key_positions[0]??""}</td><td>${s.key_positions[1]??""}</td><td>${s.key_positions[2]??""}</td>
+    <td style="color:#4a6080">${s.engagement_recommendation??""}</td>
+    <td style="font-size:11px">${(s.sources??[]).map(src=>`<a href="${src}" style="color:#0369a1;display:block">${src.length>50?src.slice(0,47)+"…":src}</a>`).join("")||"—"}</td>
+  </tr>`).join("")}
+  </tbody></table>
+  <div class="footer"><span>Beyond Group Consulting &nbsp;·&nbsp; ${cat}</span><span>${now}</span></div>
+</div></div>`;
 }).join("")}
 
-<div class="section-title">Influence Matrix</div>
-<table><thead><tr>
-  <th class="matrix-th-band">Influence Band</th>
-  <th class="matrix-th-sup">Supportive</th>
-  <th class="matrix-th-neu">Neutral</th>
-  <th class="matrix-th-opp">Opposed</th>
-</tr></thead><tbody>
-${bands.map(band => {
-  const inBand = stakeholders.filter(s => s.influence_score >= band.min && s.influence_score <= band.max);
-  const cell = (stance: string, cls: string) => `<td class="${cls}">${inBand.filter(s => s.stance === stance).map(s => `<div style="margin-bottom:3px">&#8226; ${s.name} <span style="color:#888;font-size:10px">(${s.organization})</span></div>`).join("") || "<span style='color:#aaa'>—</span>"}</td>`;
-  return `<tr><td class="matrix-band">${band.label}</td>${cell("supportive","matrix-sup")}${cell("neutral","matrix-neu")}${cell("opposed","matrix-opp")}</tr>`;
-}).join("")}
-</tbody></table>
+<!-- MATRIX -->
+<div id="matrix" class="tab-content">
+<div class="page">
+  <div class="section-title">Influence Matrix</div>
+  <table><thead><tr>
+    <th style="background:#003057;width:140px">Influence Band</th>
+    <th style="background:#166534">Supportive</th>
+    <th style="background:#854d0e">Neutral</th>
+    <th style="background:#991b1b">Opposed</th>
+  </tr></thead><tbody>
+  ${bands.map(band => {
+    const inBand = stakeholders.filter(s => s.influence_score >= band.min && s.influence_score <= band.max);
+    const cell = (stance: string, cls: string) => `<td class="${cls}">${inBand.filter(s=>s.stance===stance).map(s=>`<div style="margin-bottom:4px">&#8226; <strong>${s.name}</strong> <span style="color:#888;font-size:10px">(${s.organization})</span></div>`).join("")||"<span style='color:#aaa'>—</span>"}</td>`;
+    return `<tr><td class="matrix-band">${band.label}</td>${cell("supportive","matrix-sup")}${cell("neutral","matrix-neu")}${cell("opposed","matrix-opp")}</tr>`;
+  }).join("")}
+  </tbody></table>
+  <div class="footer"><span>Beyond Group Consulting</span><span>${now}</span></div>
+</div></div>
 
-${allEntries.length > 0 ? `<div class="section-title">Engagement Log (${allEntries.length} interactions)</div>
-<table><thead><tr><th>Stakeholder</th><th>Date</th><th>Type</th><th>Outcome</th><th>Notes</th></tr></thead><tbody>
-${allEntries.map(e => {
-  const oc = e.outcome === "Positive" ? "background:#e6f4ea;color:#166534" : e.outcome === "Negative" ? "background:#fdecea;color:#991b1b" : e.outcome === "Pending" ? "background:#ede9fe;color:#3730a3" : "background:#fff8e1;color:#854d0e";
-  return `<tr><td style="font-weight:600">${e.stakeholderName}</td><td style="color:#7a92a8">${e.date}</td><td>${e.type}</td><td><span style="${oc};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600">${e.outcome}</span></td><td>${e.notes}</td></tr>`;
-}).join("")}
-</tbody></table>` : ""}
+<!-- ENGAGEMENT -->
+${allEntries.length > 0 ? `<div id="engagement" class="tab-content">
+<div class="page">
+  <div class="section-title">Engagement Log — ${allEntries.length} Interactions</div>
+  <table><thead><tr><th>Stakeholder</th><th>Date</th><th>Type</th><th>Outcome</th><th>Notes</th></tr></thead><tbody>
+  ${allEntries.map(e => {
+    const oc = e.outcome==="Positive"?"background:#e6f4ea;color:#166534":e.outcome==="Negative"?"background:#fdecea;color:#991b1b":e.outcome==="Pending"?"background:#ede9fe;color:#3730a3":"background:#fff8e1;color:#854d0e";
+    return `<tr><td style="font-weight:600">${e.stakeholderName}</td><td style="color:#7a92a8">${e.date}</td><td>${e.type}</td><td><span style="${oc};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600">${e.outcome}</span></td><td>${e.notes}</td></tr>`;
+  }).join("")}
+  </tbody></table>
+  <div class="footer"><span>Beyond Group Consulting</span><span>${now}</span></div>
+</div></div>` : ""}
 
-<div class="footer">
-  <span>Beyond Group Consulting &nbsp;·&nbsp; Stakeholder Intelligence Platform</span>
-  <span>Powered by Claude AI &nbsp;·&nbsp; ${now}</span>
-</div>
-</div></body></html>`;
+</body></html>`;
 
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const safeSector = query.sector.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const safeRegion = query.region.replace(/[^a-zA-Z0-9_-]/g, "_");
-  a.href = url; a.download = `BeyondGroup_Stakeholder_Map_${safeSector}_${safeRegion}_${new Date().toISOString().slice(0, 10)}.html`;
+  const safe = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_");
+  a.href = url; a.download = `BeyondGroup_Stakeholder_Report_${safe(query.sector)}_${safe(query.region)}_${new Date().toISOString().slice(0,10)}.html`;
   a.click(); URL.revokeObjectURL(url);
 }
 
@@ -659,19 +781,19 @@ ${allEntries.map(e => {
 export default function DiscoverPage() {
   const [sector, setSector] = useState("");
   const [region, setRegion] = useState("");
+  const [objectives, setObjectives] = useState("");
   const [loading, setLoading] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; label: string } | null>(null);
   const [stakeholders, setStakeholders] = useState<Stakeholder[] | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [lastQuery, setLastQuery] = useState<{ sector: string; region: string } | null>(null);
+  const [lastQuery, setLastQuery] = useState<{ sector: string; region: string; objectives?: string } | null>(null);
   const [activeCategory, setActiveCategory] = useState<StakeholderCategory | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showAddModal, setShowAddModal] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [exporting, setExporting] = useState(false);
   const [engagementLog, setEngagementLog] = useState<Record<string, EngagementEntry[]>>({});
   const [engagementTarget, setEngagementTarget] = useState<Stakeholder | null>(null);
   const [showOverview, setShowOverview] = useState(false);
@@ -684,6 +806,10 @@ export default function DiscoverPage() {
   const totalEngagementEntries = Object.values(engagementLog).flat().length;
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) setUploadedFile(f); };
   const handleRemoveFile = () => { setUploadedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
+
+  const handleDismiss = (name: string) => {
+    setStakeholders(prev => prev ? prev.filter(s => s.name !== name) : prev);
+  };
 
   const handleExtractFromDocument = async () => {
     if (!uploadedFile) return;
@@ -711,10 +837,11 @@ export default function DiscoverPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const s = sector.trim(); const r = region.trim();
+    const s = sector.trim(); const r = region.trim(); const o = objectives.trim();
     if (!s || !r) return;
     setLoading(true); setBatchProgress(null); setError(null);
-    setStakeholders(null); setResultMode(null); setActiveCategory(null); setLastQuery({ sector: s, region: r });
+    setStakeholders(null); setResultMode(null); setActiveCategory(null);
+    setLastQuery({ sector: s, region: r, objectives: o || undefined });
 
     let docStakeholders: Stakeholder[] = [];
     if (uploadedFile) {
@@ -731,7 +858,10 @@ export default function DiscoverPage() {
       setBatchProgress({ current: batchNum, total: 5, label: BATCH_LABELS[batchNum - 1] });
       try {
         const existingNames = allStakeholders.map(s => s.name);
-        const res = await fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sector: s, region: r, batch: batchNum, existingNames }) });
+        const res = await fetch("/api/discover", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sector: s, region: r, objectives: o || undefined, batch: batchNum, existingNames }),
+        });
         if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error((d as { error?: string }).error || `HTTP ${res.status}`); }
         const data = await res.json();
         allStakeholders = [...allStakeholders, ...data.stakeholders];
@@ -755,7 +885,6 @@ export default function DiscoverPage() {
   const categoryCounts: Record<string, number> = {};
   if (stakeholders) for (const s of stakeholders) { const c = s.category || "Uncategorized"; categoryCounts[c] = (categoryCounts[c] || 0) + 1; }
   const filteredStakeholders = stakeholders ? (activeCategory ? stakeholders.filter(s => s.category === activeCategory) : stakeholders) : null;
-  const handleExport = () => { if (!stakeholders || !lastQuery) return; setExporting(true); try { exportToHTML(stakeholders, lastQuery, engagementLog); } finally { setExporting(false); } };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: T.pageBg }}>
@@ -783,8 +912,8 @@ export default function DiscoverPage() {
         {/* Search form */}
         <div className="rounded p-8 mb-10" style={{ background: T.white, border: `1px solid ${T.border}`, boxShadow: "0 2px 12px rgba(0,48,87,0.07)" }}>
           <h1 className="text-2xl font-bold mb-1" style={{ color: T.navyDark }}>Stakeholder Mapping</h1>
-          <p className="text-sm mb-6" style={{ color: T.navyMid }}>Enter a sector and region to generate an AI-powered stakeholder analysis</p>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <p className="text-sm mb-6" style={{ color: T.navyMid }}>Enter sector, region and objectives to generate a targeted stakeholder analysis</p>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row items-end gap-4">
               <div className="flex-1">
                 <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Sector</label>
@@ -794,35 +923,43 @@ export default function DiscoverPage() {
                 <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Region</label>
                 <input suppressHydrationWarning type="text" value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g. Sub-Saharan Africa, Southeast Asia, EU" className="w-full px-4 py-3 text-sm outline-none" style={inputStyle} onFocus={e => (e.target.style.borderColor = T.crimsonBorder)} onBlur={e => (e.target.style.borderColor = T.border)} />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>
+                Objectives <span style={{ color: T.navyLight, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — refines the scope of the analysis)</span>
+              </label>
+              <input suppressHydrationWarning type="text" value={objectives} onChange={e => setObjectives(e.target.value)} placeholder="e.g. Improve rural access to clean energy, Build public-private partnerships for digital transformation" className="w-full px-4 py-3 text-sm outline-none" style={inputStyle} onFocus={e => (e.target.style.borderColor = T.crimsonBorder)} onBlur={e => (e.target.style.borderColor = T.border)} />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <input ref={fileInputRef} type="file" accept=".pdf,.docx,.pptx,.txt" onChange={handleFileSelect} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase hover:opacity-80" style={{ color: T.indigo, border: `1px solid ${T.indigoBorder}`, borderRadius: "2px", background: T.indigoBg }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" /></svg>Upload Document
+                </button>
+                {uploadedFile && (
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      {uploadedFile.name}
+                    </span>
+                    <button type="button" onClick={handleRemoveFile} style={{ color: T.navyLight }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                    {!sector.trim() || !region.trim()
+                      ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extracting…" : "Extract Stakeholders"}</button>
+                      : <span className="text-xs" style={{ color: T.navyLight }}>Will be included in analysis</span>
+                    }
+                  </div>
+                )}
+                <span className="text-xs" style={{ color: T.navyLight }}>PDF, DOCX, PPTX supported</span>
+              </div>
               <button type="submit" disabled={loading || !sector.trim() || !region.trim()} className="px-8 py-3 text-sm font-bold tracking-wider uppercase text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shrink-0" style={{ background: T.crimson, borderRadius: "2px", minWidth: "140px" }} onMouseEnter={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimsonLight; }} onMouseLeave={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimson; }}>
                 {loading ? "Analysing…" : "Analyse"}
               </button>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${T.border}` }}>
-              <input ref={fileInputRef} type="file" accept=".pdf,.docx,.pptx,.txt" onChange={handleFileSelect} className="hidden" />
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase hover:opacity-80" style={{ color: T.indigo, border: `1px solid ${T.indigoBorder}`, borderRadius: "2px", background: T.indigoBg }}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" /></svg>Upload Document
-              </button>
-              {uploadedFile && (
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium" style={{ background: T.indigoBg, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    {uploadedFile.name}
-                  </span>
-                  <button type="button" onClick={handleRemoveFile} style={{ color: T.navyLight }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-                  {!sector.trim() || !region.trim()
-                    ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extracting…" : "Extract Stakeholders"}</button>
-                    : <span className="text-xs" style={{ color: T.navyLight }}>Will be included in analysis</span>
-                  }
-                </div>
-              )}
-              <span className="text-xs" style={{ color: T.navyLight }}>PDF, DOCX, PPTX supported</span>
             </div>
             <p className="text-xs" style={{ color: T.navyLight }}>Demo data available for: <span style={{ color: T.navyMid }}>{DEMO_HINTS}</span></p>
           </form>
         </div>
 
-        {/* Loading states */}
+        {/* Loading */}
         {uploadLoading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.indigo, borderTopColor: "transparent" }} />
@@ -869,7 +1006,7 @@ export default function DiscoverPage() {
                   <h2 className="text-lg font-bold" style={{ color: T.navyDark }}>{stakeholders.length} Stakeholders Identified</h2>
                   {resultMode && <ModeBadge mode={resultMode} />}
                 </div>
-                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} · {lastQuery?.region}</p>
+                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} · {lastQuery?.region}{lastQuery?.objectives ? ` · ${lastQuery.objectives}` : ""}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 {stanceSummary && (
@@ -885,10 +1022,10 @@ export default function DiscoverPage() {
             {/* Action bar */}
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
               <div className="flex gap-3 flex-wrap">
-                <button onClick={() => setViewMode("list")} className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200" style={{ background: viewMode === "list" ? T.crimson : "transparent", color: viewMode === "list" ? T.white : T.navyMid, border: viewMode === "list" ? `1px solid ${T.crimson}` : `1px solid ${T.border}`, borderRadius: "3px" }}>
+                <button onClick={() => setViewMode("list")} className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all" style={{ background: viewMode === "list" ? T.crimson : "transparent", color: viewMode === "list" ? T.white : T.navyMid, border: viewMode === "list" ? `1px solid ${T.crimson}` : `1px solid ${T.border}`, borderRadius: "3px" }}>
                   <svg fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>List View
                 </button>
-                <button onClick={() => setViewMode("map")} className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all duration-200" style={{ background: viewMode === "map" ? T.crimson : "transparent", color: viewMode === "map" ? T.white : T.navyMid, border: viewMode === "map" ? `1px solid ${T.crimson}` : `1px solid ${T.border}`, borderRadius: "3px" }}>
+                <button onClick={() => setViewMode("map")} className="flex items-center gap-2.5 px-5 py-2.5 text-sm font-bold tracking-wider uppercase transition-all" style={{ background: viewMode === "map" ? T.crimson : "transparent", color: viewMode === "map" ? T.white : T.navyMid, border: viewMode === "map" ? `1px solid ${T.crimson}` : `1px solid ${T.border}`, borderRadius: "3px" }}>
                   <svg fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24" style={{ width: 18, height: 18 }}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>Map View
                 </button>
               </div>
@@ -897,7 +1034,11 @@ export default function DiscoverPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                   Engagement {totalEngagementEntries > 0 ? `(${totalEngagementEntries})` : "Log"}
                 </button>
-                <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 disabled:opacity-40" style={{ background: "#0f766e", borderRadius: "3px" }}>
+                <button onClick={() => lastQuery && exportToCSV(stakeholders, lastQuery, engagementLog)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90" style={{ background: "#0f766e", borderRadius: "3px" }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Export CSV
+                </button>
+                <button onClick={() => lastQuery && exportToHTML(stakeholders, lastQuery, engagementLog)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90" style={{ background: T.navyDark, borderRadius: "3px" }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                   Export Report
                 </button>
@@ -919,9 +1060,15 @@ export default function DiscoverPage() {
 
             {/* List */}
             {viewMode === "list" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" style={{ animation: "fadeIn 0.25s ease-out" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {(filteredStakeholders ?? []).sort((a, b) => b.influence_score - a.influence_score).map((s, i) => (
-                  <StakeholderCard key={`${s.name}-${i}`} stakeholder={s} engagementEntries={engagementLog[s.name] ?? []} onOpenEngagement={() => setEngagementTarget(s)} />
+                  <StakeholderCard
+                    key={`${s.name}-${i}`}
+                    stakeholder={s}
+                    engagementEntries={engagementLog[s.name] ?? []}
+                    onOpenEngagement={() => setEngagementTarget(s)}
+                    onDismiss={() => handleDismiss(s.name)}
+                  />
                 ))}
               </div>
             )}
@@ -944,7 +1091,7 @@ export default function DiscoverPage() {
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: T.crimson }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </div>
             <p className="text-base font-semibold mb-1" style={{ color: T.navyDark }}>No stakeholders mapped yet</p>
-            <p className="text-sm" style={{ color: T.navyMid }}>Enter a sector and region above to begin your analysis</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Enter a sector, region and objectives above to begin your analysis</p>
           </div>
         )}
       </main>
