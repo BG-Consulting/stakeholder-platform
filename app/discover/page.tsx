@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, lazy, Suspense, useEffect } from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { getDemoData, DEMO_HINTS } from "../lib/demoData";
 
 const MapView = lazy(() => import("./MapView"));
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type EngagementEntry = {
   id: string;
@@ -18,77 +18,49 @@ type EngagementEntry = {
   outcome: "Positive" | "Neutral" | "Negative" | "Pending";
 };
 
-// â”€â”€â”€ Storage helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Storage ──────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "stakeholder_engagement_log";
 
 function loadEngagementLog(): Record<string, EngagementEntry[]> {
   if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; }
+  catch { return {}; }
 }
 
 function saveEngagementLog(log: Record<string, EngagementEntry[]>) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
-  } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(log)); } catch {}
 }
 
-// â”€â”€â”€ Design tokens (light mode, Beyond Group brand) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
 const T = {
-  pageBg: "#f4f5f7",
-  cardBg: "#f0f2f5",
-  inputBg: "#ffffff",
-  headerBg: "#003057",
-  navyDark: "#003057",
-  navyMid: "#4a6080",
-  navyLight: "#7a92a8",
-  border: "rgba(0,48,87,0.12)",
-  borderStrong: "rgba(0,48,87,0.25)",
-  crimson: "#cb333b",
-  crimsonLight: "#e04048",
-  crimsonBg: "rgba(203,51,59,0.08)",
-  crimsonBorder: "rgba(203,51,59,0.3)",
+  pageBg: "#f4f5f7", cardBg: "#f0f2f5", inputBg: "#ffffff",
+  headerBg: "#003057", navyDark: "#003057", navyMid: "#4a6080", navyLight: "#7a92a8",
+  border: "rgba(0,48,87,0.12)", borderStrong: "rgba(0,48,87,0.25)",
+  crimson: "#cb333b", crimsonLight: "#e04048",
+  crimsonBg: "rgba(203,51,59,0.08)", crimsonBorder: "rgba(203,51,59,0.3)",
   white: "#ffffff",
-  green: "#15803d",
-  greenBg: "rgba(21,128,61,0.1)",
-  greenBorder: "rgba(21,128,61,0.3)",
-  yellow: "#92650a",
-  yellowBg: "rgba(146,101,10,0.08)",
-  yellowBorder: "rgba(146,101,10,0.25)",
-  red: "#cb333b",
-  redBg: "rgba(203,51,59,0.08)",
-  redBorder: "rgba(203,51,59,0.25)",
-  indigo: "#3730a3",
-  indigoBg: "rgba(55,48,163,0.08)",
-  indigoBorder: "rgba(55,48,163,0.25)",
+  green: "#15803d", greenBg: "rgba(21,128,61,0.1)", greenBorder: "rgba(21,128,61,0.3)",
+  yellow: "#92650a", yellowBg: "rgba(146,101,10,0.08)", yellowBorder: "rgba(146,101,10,0.25)",
+  red: "#cb333b", redBg: "rgba(203,51,59,0.08)", redBorder: "rgba(203,51,59,0.25)",
+  indigo: "#3730a3", indigoBg: "rgba(55,48,163,0.08)", indigoBorder: "rgba(55,48,163,0.25)",
 };
 
 const inputStyle = {
-  background: T.inputBg,
-  border: `1px solid ${T.border}`,
-  borderRadius: "2px",
-  color: T.navyDark,
-  transition: "border-color 0.2s",
+  background: T.inputBg, border: `1px solid ${T.border}`,
+  borderRadius: "2px", color: T.navyDark, transition: "border-color 0.2s",
 };
 
 const labelStyle: React.CSSProperties = {
-  color: T.crimson,
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  marginBottom: "4px",
-  display: "block",
+  color: T.crimson, fontSize: "10px", fontWeight: 600,
+  textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px", display: "block",
 };
 
-// â”€â”€â”€ Shared config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 type ViewMode = "list" | "map";
+type ResultMode = "demo" | "live";
 
 const CATEGORIES: StakeholderCategory[] = [
   "Government & Regulatory", "Private Sector", "Civil Society & NGOs",
@@ -113,33 +85,29 @@ const TYPE_COLORS: Record<Stakeholder["type"], string> = {
 
 const STANCE_CONFIG: Record<Stakeholder["stance"], { label: string; bg: string; text: string; border: string }> = {
   supportive: { label: "Supportive", bg: T.greenBg, text: T.green, border: T.greenBorder },
-  neutral: { label: "Neutral", bg: T.yellowBg, text: T.yellow, border: T.yellowBorder },
-  opposed: { label: "Opposed", bg: T.redBg, text: T.red, border: T.redBorder },
+  neutral:    { label: "Neutral",    bg: T.yellowBg, text: T.yellow, border: T.yellowBorder },
+  opposed:    { label: "Opposed",    bg: T.redBg,    text: T.red,    border: T.redBorder },
 };
 
 const OUTCOME_COLORS: Record<EngagementEntry["outcome"], { bg: string; text: string; border: string }> = {
-  Positive: { bg: T.greenBg, text: T.green, border: T.greenBorder },
-  Neutral: { bg: T.yellowBg, text: T.yellow, border: T.yellowBorder },
-  Negative: { bg: T.redBg, text: T.red, border: T.redBorder },
-  Pending: { bg: T.indigoBg, text: T.indigo, border: T.indigoBorder },
+  Positive: { bg: T.greenBg,  text: T.green,  border: T.greenBorder },
+  Neutral:  { bg: T.yellowBg, text: T.yellow, border: T.yellowBorder },
+  Negative: { bg: T.redBg,    text: T.red,    border: T.redBorder },
+  Pending:  { bg: T.indigoBg, text: T.indigo, border: T.indigoBorder },
 };
 
 const TYPE_ICONS: Record<EngagementEntry["type"], string> = {
-  Meeting: "ðŸ¤", Interview: "ðŸŽ¤", Email: "âœ‰ï¸", Call: "ðŸ“ž", Workshop: "ðŸ§©", Other: "ðŸ“Œ",
+  Meeting: "🤝", Interview: "🎤", Email: "✉️", Call: "📞", Workshop: "🧩", Other: "📌",
 };
 
-type ResultMode = "demo" | "live";
-
-// â”€â”€â”€ Small shared components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Small components ─────────────────────────────────────────────────────────
 
 function ModeBadge({ mode }: { mode: ResultMode }) {
-  if (mode === "demo") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold tracking-widest uppercase" style={{ background: T.yellowBg, color: T.yellow, border: `1px solid ${T.yellowBorder}`, borderRadius: "2px" }}>
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.yellow }} />Demo
-      </span>
-    );
-  }
+  if (mode === "demo") return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold tracking-widest uppercase" style={{ background: T.yellowBg, color: T.yellow, border: `1px solid ${T.yellowBorder}`, borderRadius: "2px" }}>
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.yellow }} />Demo
+    </span>
+  );
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold tracking-widest uppercase" style={{ background: T.greenBg, color: T.green, border: `1px solid ${T.greenBorder}`, borderRadius: "2px" }}>
       <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: T.green }} />Live
@@ -152,7 +120,7 @@ function InfluenceBar({ score }: { score: number }) {
     <div className="flex items-center gap-2">
       <div className="flex gap-0.5">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="w-2.5 h-2.5 rounded-sm" style={{ background: i < score ? (i < 4 ? T.crimson : i < 7 ? "#b45309" : "#991b1b") : "rgba(0,48,87,0.1)" }} />
+          <div key={i} className="w-2.5 h-2.5 rounded-sm" style={{ background: i < score ? (i < 4 ? T.crimson : i < 7 ? "#f59e0b" : "#ef4444") : "rgba(0,48,87,0.1)" }} />
         ))}
       </div>
       <span className="text-xs font-bold" style={{ color: T.navyLight }}>{score}/10</span>
@@ -164,7 +132,7 @@ function ContactInfo({ contact }: { contact?: string }) {
   if (!contact) return null;
   const isEmail = contact.includes("@") && !contact.includes("/");
   const href = isEmail ? `mailto:${contact}` : contact;
-  const display = contact.length > 40 ? contact.slice(0, 37) + "â€¦" : contact;
+  const display = contact.length > 40 ? contact.slice(0, 37) + "…" : contact;
   return (
     <div className="flex items-center gap-1.5 mt-1">
       {isEmail
@@ -176,7 +144,7 @@ function ContactInfo({ contact }: { contact?: string }) {
   );
 }
 
-// â”€â”€â”€ Add Stakeholder Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Add Stakeholder Modal ────────────────────────────────────────────────────
 
 function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => void; onClose: () => void }) {
   const [form, setForm] = useState({
@@ -187,12 +155,12 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
     key_position_1: "", key_position_2: "", key_position_3: "",
     engagement_recommendation: "", contact: "", longitude: "", latitude: "",
   });
-  const handleChange = (field: string, value: string | number) => setForm(p => ({ ...p, [field]: value }));
-  const TYPE_TO_CATEGORY: Record<Stakeholder["type"], Stakeholder["category"]> = {
+  const h = (f: string, v: string | number) => setForm(p => ({ ...p, [f]: v }));
+  const TYPE_TO_CAT: Record<Stakeholder["type"], Stakeholder["category"]> = {
     government: "Government & Regulatory", private: "Private Sector", ngo: "Civil Society & NGOs",
     media: "Media & Communications", academic: "Academic & Research", international: "International Organizations & Donors",
   };
-  const handleSubmit = () => {
+  const submit = () => {
     if (!form.name.trim() || !form.organization.trim()) return;
     onAdd({
       name: form.name.trim(), organization: form.organization.trim(),
@@ -200,7 +168,8 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
       type: form.type, category: form.category, influence_score: form.influence_score, stance: form.stance,
       key_positions: [form.key_position_1.trim() || "To be defined", form.key_position_2.trim() || "To be defined", form.key_position_3.trim() || "To be defined"],
       engagement_recommendation: form.engagement_recommendation.trim() || "To be defined",
-      contact: form.contact.trim(), coordinates: [parseFloat(form.longitude) || 0, parseFloat(form.latitude) || 0], sources: [], source_years: [], generated_date: new Date().toISOString().slice(0, 10),
+      contact: form.contact.trim(), coordinates: [parseFloat(form.longitude) || 0, parseFloat(form.latitude) || 0],
+      sources: [], source_years: [], generated_date: new Date().toISOString().slice(0, 10),
     });
     onClose();
   };
@@ -209,45 +178,45 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded p-6" style={{ background: T.white, border: `1px solid ${T.crimsonBorder}`, boxShadow: "0 20px 60px rgba(0,48,87,0.2)" }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold" style={{ color: T.navyDark }}>Add Stakeholder</h2>
-          <button onClick={onClose} style={{ color: T.navyLight }} className="hover:opacity-70 transition-opacity"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+          <button onClick={onClose} style={{ color: T.navyLight }}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label style={labelStyle}>Name / Role *</label><input type="text" value={form.name} onChange={e => handleChange("name", e.target.value)} placeholder="e.g. Minister of Energy" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Organization *</label><input type="text" value={form.organization} onChange={e => handleChange("organization", e.target.value)} placeholder="e.g. Ministry of Energy" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Name / Role *</label><input type="text" value={form.name} onChange={e => h("name", e.target.value)} placeholder="e.g. Minister of Energy" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Organization *</label><input type="text" value={form.organization} onChange={e => h("organization", e.target.value)} placeholder="e.g. Ministry of Energy" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label style={labelStyle}>Current Officeholder</label><input type="text" value={form.current_officeholder} onChange={e => handleChange("current_officeholder", e.target.value)} placeholder="Full name" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Contact</label><input type="text" value={form.contact} onChange={e => handleChange("contact", e.target.value)} placeholder="https://... or email@org.com" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Current Officeholder</label><input type="text" value={form.current_officeholder} onChange={e => h("current_officeholder", e.target.value)} placeholder="Full name" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Contact</label><input type="text" value={form.contact} onChange={e => h("contact", e.target.value)} placeholder="https://... or email" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div><label style={labelStyle}>Type</label>
-              <select value={form.type} onChange={e => { const t = e.target.value as Stakeholder["type"]; handleChange("type", t); handleChange("category", TYPE_TO_CATEGORY[t]); }} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle}>
+              <select value={form.type} onChange={e => { const t = e.target.value as Stakeholder["type"]; h("type", t); h("category", TYPE_TO_CAT[t]); }} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle}>
                 {(["government","private","ngo","media","academic","international"] as Stakeholder["type"][]).map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
               </select>
             </div>
             <div><label style={labelStyle}>Stance</label>
-              <select value={form.stance} onChange={e => handleChange("stance", e.target.value)} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle}>
+              <select value={form.stance} onChange={e => h("stance", e.target.value)} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle}>
                 <option value="supportive">Supportive</option><option value="neutral">Neutral</option><option value="opposed">Opposed</option>
               </select>
             </div>
-            <div><label style={labelStyle}>Influence (1-10)</label><input type="number" min={1} max={10} value={form.influence_score} onChange={e => handleChange("influence_score", parseInt(e.target.value) || 5)} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Influence (1-10)</label><input type="number" min={1} max={10} value={form.influence_score} onChange={e => h("influence_score", parseInt(e.target.value) || 5)} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
           </div>
-          <div><label style={labelStyle}>Key Positions (3)</label>
+          <div><label style={labelStyle}>Key Positions</label>
             <div className="flex flex-col gap-2">
-              {[1,2,3].map(n => <input key={n} type="text" value={(form as Record<string,string|number>)[`key_position_${n}`] as string} onChange={e => handleChange(`key_position_${n}`, e.target.value)} placeholder={`Key position ${n}`} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} />)}
+              {[1,2,3].map(n => <input key={n} type="text" value={(form as Record<string,string|number>)[`key_position_${n}`] as string} onChange={e => h(`key_position_${n}`, e.target.value)} placeholder={`Key position ${n}`} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} />)}
             </div>
           </div>
           <div><label style={labelStyle}>Engagement Recommendation</label>
-            <textarea value={form.engagement_recommendation} onChange={e => handleChange("engagement_recommendation", e.target.value)} placeholder="How should the team engage this stakeholder?" rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} />
+            <textarea value={form.engagement_recommendation} onChange={e => h("engagement_recommendation", e.target.value)} rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label style={labelStyle}>Longitude</label><input type="text" value={form.longitude} onChange={e => handleChange("longitude", e.target.value)} placeholder="e.g. 35.50" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Latitude</label><input type="text" value={form.latitude} onChange={e => handleChange("latitude", e.target.value)} placeholder="e.g. 33.89" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Longitude</label><input type="text" value={form.longitude} onChange={e => h("longitude", e.target.value)} placeholder="e.g. 35.50" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Latitude</label><input type="text" value={form.latitude} onChange={e => h("latitude", e.target.value)} placeholder="e.g. 33.89" className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} /></div>
           </div>
           <div className="flex justify-end gap-3 mt-2">
             <button onClick={onClose} className="px-5 py-2 text-sm font-semibold tracking-wider uppercase" style={{ color: T.navyMid, border: `1px solid ${T.border}`, borderRadius: "2px" }}>Cancel</button>
-            <button onClick={handleSubmit} disabled={!form.name.trim() || !form.organization.trim()} className="px-5 py-2 text-sm font-bold tracking-wider uppercase text-white disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: T.crimson, borderRadius: "2px" }}>Add Stakeholder</button>
+            <button onClick={submit} disabled={!form.name.trim() || !form.organization.trim()} className="px-5 py-2 text-sm font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>Add Stakeholder</button>
           </div>
         </div>
       </div>
@@ -255,19 +224,19 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
   );
 }
 
-// â”€â”€â”€ Engagement Log Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Engagement Modal ─────────────────────────────────────────────────────────
 
 function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholder: Stakeholder; entries: EngagementEntry[]; onSave: (e: EngagementEntry[]) => void; onClose: () => void }) {
   const [log, setLog] = useState<EngagementEntry[]>(entries);
   const [form, setForm] = useState<Omit<EngagementEntry, "id"|"stakeholderName">>({ date: new Date().toISOString().slice(0,10), type: "Meeting", notes: "", outcome: "Pending" });
   const [adding, setAdding] = useState(false);
-  const handleAdd = () => {
+  const add = () => {
     if (!form.notes.trim()) return;
-    const entry: EngagementEntry = { id: `${Date.now()}-${Math.random()}`, stakeholderName: stakeholder.name, ...form };
-    const updated = [entry, ...log]; setLog(updated); onSave(updated);
+    const updated = [{ id: `${Date.now()}-${Math.random()}`, stakeholderName: stakeholder.name, ...form }, ...log];
+    setLog(updated); onSave(updated);
     setForm({ date: new Date().toISOString().slice(0,10), type: "Meeting", notes: "", outcome: "Pending" }); setAdding(false);
   };
-  const handleDelete = (id: string) => { const updated = log.filter(e => e.id !== id); setLog(updated); onSave(updated); };
+  const del = (id: string) => { const updated = log.filter(e => e.id !== id); setLog(updated); onSave(updated); };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,48,87,0.4)", backdropFilter: "blur(4px)" }} onClick={onClose}>
       <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded" style={{ background: T.white, border: `1px solid ${T.indigoBorder}`, boxShadow: "0 20px 60px rgba(0,48,87,0.2)" }} onClick={e => e.stopPropagation()}>
@@ -277,52 +246,51 @@ function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholde
             <h2 className="text-base font-bold mt-0.5" style={{ color: T.navyDark }}>{stakeholder.name}</h2>
             <p className="text-xs mt-0.5" style={{ color: T.navyMid }}>{stakeholder.organization}</p>
           </div>
-          <button onClick={onClose} style={{ color: T.navyLight }} className="hover:opacity-70 mt-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+          <button onClick={onClose} style={{ color: T.navyLight }}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
         <div className="p-6 flex flex-col gap-5">
-          {!adding ? (
-            <button onClick={() => setAdding(true)} className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>Log New Interaction
-            </button>
-          ) : (
-            <div className="rounded p-4 flex flex-col gap-3" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}` }}>
-              <p className="text-xs font-bold tracking-widest uppercase" style={{ color: T.indigo }}>New Interaction</p>
-              <div className="grid grid-cols-3 gap-3">
-                <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Date</label><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle} /></div>
-                <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Type</label>
-                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as EngagementEntry["type"] }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle}>
-                    {["Meeting","Interview","Email","Call","Workshop","Other"].map(t => <option key={t}>{t}</option>)}
-                  </select>
+          {!adding
+            ? <button onClick={() => setAdding(true)} className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wider uppercase hover:opacity-80" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>Log New Interaction
+              </button>
+            : <div className="rounded p-4 flex flex-col gap-3" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}` }}>
+                <p className="text-xs font-bold tracking-widest uppercase" style={{ color: T.indigo }}>New Interaction</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Date</label><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle} /></div>
+                  <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Type</label>
+                    <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as EngagementEntry["type"] }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle}>
+                      {["Meeting","Interview","Email","Call","Workshop","Other"].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Outcome</label>
+                    <select value={form.outcome} onChange={e => setForm(f => ({ ...f, outcome: e.target.value as EngagementEntry["outcome"] }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle}>
+                      {["Positive","Neutral","Negative","Pending"].map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Outcome</label>
-                  <select value={form.outcome} onChange={e => setForm(f => ({ ...f, outcome: e.target.value as EngagementEntry["outcome"] }))} className="w-full px-2 py-1.5 text-xs outline-none" style={inputStyle}>
-                    {["Positive","Neutral","Negative","Pending"].map(o => <option key={o}>{o}</option>)}
-                  </select>
+                <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Notes *</label>
+                  <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} placeholder="Summarise the interaction…" />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setAdding(false)} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: T.navyMid, border: `1px solid ${T.border}`, borderRadius: "2px" }}>Cancel</button>
+                  <button onClick={add} disabled={!form.notes.trim()} className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-40" style={{ background: T.indigo, borderRadius: "2px" }}>Save Entry</button>
                 </div>
               </div>
-              <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Notes *</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Summarise the interaction, key takeaways, follow-upsâ€¦" rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setAdding(false)} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: T.navyMid, border: `1px solid ${T.border}`, borderRadius: "2px" }}>Cancel</button>
-                <button onClick={handleAdd} disabled={!form.notes.trim()} className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-40" style={{ background: T.indigo, borderRadius: "2px" }}>Save Entry</button>
-              </div>
-            </div>
-          )}
+          }
           {log.length === 0
-            ? <div className="text-center py-8" style={{ color: T.navyLight }}><p className="text-sm">No interactions logged yet.</p><p className="text-xs mt-1">Use the button above to record your first entry.</p></div>
+            ? <div className="text-center py-8" style={{ color: T.navyLight }}><p className="text-sm">No interactions logged yet.</p></div>
             : <div className="flex flex-col gap-3">{log.map(entry => {
                 const oc = OUTCOME_COLORS[entry.outcome];
                 return (
                   <div key={entry.id} className="rounded p-4" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{TYPE_ICONS[entry.type]}</span>
+                        <span>{TYPE_ICONS[entry.type]}</span>
                         <div><span className="text-sm font-semibold" style={{ color: T.navyDark }}>{entry.type}</span><span className="ml-2 text-xs" style={{ color: T.navyLight }}>{entry.date}</span></div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
-                        <button onClick={() => handleDelete(entry.id)} style={{ color: T.navyLight }} className="hover:text-red-600 transition-colors"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <button onClick={() => del(entry.id)} style={{ color: T.navyLight }} className="hover:text-red-600"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                       </div>
                     </div>
                     <p className="text-sm leading-relaxed" style={{ color: T.navyMid }}>{entry.notes}</p>
@@ -336,7 +304,7 @@ function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholde
   );
 }
 
-// â”€â”€â”€ Engagement Overview Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Engagement Overview Modal ────────────────────────────────────────────────
 
 function EngagementOverviewModal({ log, onClose }: { log: Record<string, EngagementEntry[]>; onClose: () => void }) {
   const all = Object.values(log).flat().sort((a, b) => b.date.localeCompare(a.date));
@@ -351,7 +319,7 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
             <h2 className="text-lg font-bold mt-0.5" style={{ color: T.navyDark }}>All Tracked Interactions</h2>
             <p className="text-xs mt-0.5" style={{ color: T.navyMid }}>{total} entries across {Object.keys(log).length} stakeholders</p>
           </div>
-          <button onClick={onClose} style={{ color: T.navyLight }} className="hover:opacity-70 mt-1"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+          <button onClick={onClose} style={{ color: T.navyLight }}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
         <div className="p-6 flex flex-col gap-5">
           {total > 0 && (
@@ -370,8 +338,8 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
                   <div key={entry.id} className="rounded p-4" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{TYPE_ICONS[entry.type]}</span>
-                        <div><span className="text-sm font-semibold" style={{ color: T.navyDark }}>{entry.type}</span><span className="mx-1.5 text-xs" style={{ color: T.navyLight }}>Â·</span><span className="text-xs font-medium" style={{ color: T.indigo }}>{entry.stakeholderName}</span><span className="ml-2 text-xs" style={{ color: T.navyLight }}>{entry.date}</span></div>
+                        <span>{TYPE_ICONS[entry.type]}</span>
+                        <div><span className="text-sm font-semibold" style={{ color: T.navyDark }}>{entry.type}</span><span className="mx-1.5 text-xs" style={{ color: T.navyLight }}>·</span><span className="text-xs font-medium" style={{ color: T.indigo }}>{entry.stakeholderName}</span><span className="ml-2 text-xs" style={{ color: T.navyLight }}>{entry.date}</span></div>
                       </div>
                       <span className="px-2 py-0.5 rounded text-xs font-semibold shrink-0" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
                     </div>
@@ -386,7 +354,7 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
   );
 }
 
-// â”€â”€â”€ Stakeholder Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Stakeholder Card ─────────────────────────────────────────────────────────
 
 function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: { stakeholder: Stakeholder; engagementEntries: EngagementEntry[]; onOpenEngagement: () => void }) {
   const [flipped, setFlipped] = useState(false);
@@ -395,20 +363,15 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
   const typeColor = TYPE_COLORS[stakeholder.type];
   const hasEngagement = engagementEntries.length > 0;
 
-  // Fix 1: Use a fixed height so absolute children have something to fill
-  // Fix 2: overflow-y-auto on front content so long text scrolls instead of overflowing
   return (
-    <div style={{ perspective: "1200px", height: "520px" }}>
+    <div style={{ perspective: "1200px", height: "540px" }}>
       <div style={{ position: "relative", width: "100%", height: "100%", transformStyle: "preserve-3d", transition: "transform 0.55s cubic-bezier(0.4,0.2,0.2,1)", transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}>
 
         {/* FRONT */}
-        <div
-          style={{ position: "absolute", inset: 0, background: T.cardBg, border: `1px solid ${T.border}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.2s, box-shadow 0.2s", overflow: "hidden" }}
+        <div style={{ position: "absolute", inset: 0, background: T.cardBg, border: `1px solid ${T.border}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.2s, box-shadow 0.2s", overflow: "hidden" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = T.crimsonBorder; e.currentTarget.style.boxShadow = "0 4px 20px rgba(203,51,59,0.1)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
-        >
-          {/* Scrollable content area */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
               <h3 className="font-bold text-base" style={{ color: T.navyDark }}>{stakeholder.name}</h3>
               <p className="text-sm mt-0.5" style={{ color: T.navyMid }}>{stakeholder.organization}</p>
@@ -428,7 +391,13 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
             <div style={{ borderTop: `1px solid ${T.border}` }} />
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Key Positions</p>
-              <ul className="flex flex-col gap-1.5">{stakeholder.key_positions.map((pos, i) => <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}><span style={{ color: T.crimson, marginTop: "1px" }}>â€º</span><span>{pos}</span></li>)}</ul>
+              <ul className="flex flex-col gap-1.5">
+                {stakeholder.key_positions.map((pos, i) => (
+                  <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}>
+                    <span style={{ color: T.crimson, marginTop: "1px" }}>{"\u2022"}</span><span>{pos}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div style={{ borderTop: `1px solid ${T.border}` }} />
             <div>
@@ -436,45 +405,33 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
               <p className="text-sm" style={{ color: T.navyMid }}>{stakeholder.engagement_recommendation}</p>
             </div>
           </div>
-          {/* Sticky footer with flip button */}
-          <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {/* Generated date stamp */}
+          <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             {stakeholder.generated_date && (() => {
               const genDate = new Date(stakeholder.generated_date);
-              const ageMs = Date.now() - genDate.getTime();
-              const ageMonths = ageMs / (1000 * 60 * 60 * 24 * 30);
-              const isStale = ageMonths > 12;
+              const isStale = (Date.now() - genDate.getTime()) > 1000 * 60 * 60 * 24 * 365;
               return (
                 <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: isStale ? T.red : T.navyLight }}>
                   {isStale && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>}
                   Generated {genDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                  {isStale && " Â· Verify currency"}
+                  {isStale && " · Verify currency"}
                 </span>
               );
             })()}
-            <button
-              onClick={() => setFlipped(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase hover:opacity-70 transition-opacity"
-              style={{ color: T.navyLight }}
-            >
-              Sources & Log
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            <button onClick={() => setFlipped(true)} className="flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase hover:opacity-70" style={{ color: T.navyLight }}>
+              Sources &amp; Log <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
           </div>
         </div>
 
         {/* BACK */}
         <div style={{ position: "absolute", inset: 0, background: T.white, border: `1px solid ${T.indigoBorder}`, borderRadius: "6px", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Back header */}
-          <div style={{ padding: "16px 16px 0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ padding: "16px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div className="flex gap-0 rounded overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
               <button onClick={() => setBackTab("sources")} className="px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all" style={{ background: backTab === "sources" ? T.crimsonBg : "transparent", color: backTab === "sources" ? T.crimson : T.navyLight }}>QA Sources</button>
               <button onClick={() => setBackTab("engagement")} className="px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-all" style={{ background: backTab === "engagement" ? T.indigoBg : "transparent", color: backTab === "engagement" ? T.indigo : T.navyLight }}>Engagement {hasEngagement ? `(${engagementEntries.length})` : ""}</button>
             </div>
-            <button onClick={() => setFlipped(false)} style={{ color: T.navyLight }} className="hover:opacity-70"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
+            <button onClick={() => setFlipped(false)} style={{ color: T.navyLight }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
           </div>
-
-          {/* Back scrollable content */}
           <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
             {backTab === "sources" && (
               <div className="flex flex-col gap-3">
@@ -484,90 +441,64 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                 </div>
                 {(!stakeholder.sources || stakeholder.sources.length === 0) ? (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs text-center py-2" style={{ color: T.navyLight }}>No specific sources returned â€” search manually:</p>
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(stakeholder.name + " " + stakeholder.organization)}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-3 rounded hover:opacity-80 transition-opacity"
-                      style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, color: T.indigo, textDecoration: "none" }}
-                    >
+                    <p className="text-xs text-center py-2" style={{ color: T.navyLight }}>No sources returned — search manually:</p>
+                    <a href={`https://www.google.com/search?q=${encodeURIComponent(stakeholder.name + " " + stakeholder.organization)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded hover:opacity-80" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, color: T.indigo, textDecoration: "none" }}>
                       <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       <span className="text-xs font-semibold">Search: {stakeholder.name}</span>
                     </a>
                     {stakeholder.contact?.startsWith("http") && (
-                      <a
-                        href={stakeholder.contact}
-                        target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-3 rounded hover:opacity-80 transition-opacity"
-                        style={{ background: T.cardBg, border: `1px solid ${T.border}`, color: "#0369a1", textDecoration: "none" }}
-                      >
+                      <a href={stakeholder.contact} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded hover:opacity-80" style={{ background: T.cardBg, border: `1px solid ${T.border}`, color: "#0369a1", textDecoration: "none" }}>
                         <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
                         <span className="text-xs font-semibold break-all">{stakeholder.contact}</span>
                       </a>
                     )}
                   </div>
-                ) : (
-                  stakeholder.sources.map((src, i) => {
-                    const year = stakeholder.source_years?.[i] ?? null;
-                    const currentYear = new Date().getFullYear();
-                    const isOld = year !== null && currentYear - year > 1;
-                    return (
-                      <div key={i} className="flex flex-col gap-1.5 p-3 rounded" style={{ background: T.cardBg, border: `1px solid ${isOld ? T.yellowBorder : T.border}` }}>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold shrink-0" style={{ color: T.crimson }}>Source {i + 1}</span>
-                          {year !== null ? (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: isOld ? T.yellowBg : T.greenBg, color: isOld ? T.yellow : T.green, border: `1px solid ${isOld ? T.yellowBorder : T.greenBorder}` }}>
-                              {year} {isOld && "Â· May be outdated"}
-                            </span>
-                          ) : (
-                            <span className="text-[10px]" style={{ color: T.navyLight }}>Year unknown</span>
-                          )}
-                        </div>
-                        <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs break-all hover:underline leading-relaxed" style={{ color: "#0369a1" }}>{src}</a>
+                ) : stakeholder.sources.map((src, i) => {
+                  const year = stakeholder.source_years?.[i] ?? null;
+                  const isOld = year !== null && new Date().getFullYear() - year > 1;
+                  return (
+                    <div key={i} className="flex flex-col gap-1.5 p-3 rounded" style={{ background: T.cardBg, border: `1px solid ${isOld ? T.yellowBorder : T.border}` }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold shrink-0" style={{ color: T.crimson }}>Source {i + 1}</span>
+                        {year !== null
+                          ? <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: isOld ? T.yellowBg : T.greenBg, color: isOld ? T.yellow : T.green, border: `1px solid ${isOld ? T.yellowBorder : T.greenBorder}` }}>{year}{isOld && " · May be outdated"}</span>
+                          : <span className="text-[10px]" style={{ color: T.navyLight }}>Year unknown</span>
+                        }
                       </div>
-                    );
-                  })
-                )}
+                      <a href={src} target="_blank" rel="noopener noreferrer" className="text-xs break-all hover:underline" style={{ color: "#0369a1" }}>{src}</a>
+                    </div>
+                  );
+                })}
               </div>
             )}
-
-            {/* Fix 3: Engagement tab always shows full log button that opens modal for editing */}
             {backTab === "engagement" && (
               <div className="flex flex-col gap-3">
-                {engagementEntries.length === 0 ? (
-                  <div className="text-center py-4" style={{ color: T.navyLight }}>
-                    <p className="text-sm mb-3">No interactions logged yet.</p>
-                    <button onClick={onOpenEngagement} className="px-4 py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
-                      Log First Interaction
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {engagementEntries.slice(0, 3).map(entry => {
-                      const oc = OUTCOME_COLORS[entry.outcome];
-                      return (
-                        <div key={entry.id} className="rounded p-3" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} Â· {entry.date}</span>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
+                {engagementEntries.length === 0
+                  ? <div className="text-center py-4" style={{ color: T.navyLight }}><p className="text-sm mb-3">No interactions logged yet.</p>
+                      <button onClick={onOpenEngagement} className="px-4 py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>Log First Interaction</button>
+                    </div>
+                  : <>
+                      {engagementEntries.slice(0, 3).map(entry => {
+                        const oc = OUTCOME_COLORS[entry.outcome];
+                        return (
+                          <div key={entry.id} className="rounded p-3" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} · {entry.date}</span>
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
+                            </div>
+                            <p className="text-xs leading-relaxed" style={{ color: T.navyMid, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{entry.notes}</p>
                           </div>
-                          <p className="text-xs leading-relaxed" style={{ color: T.navyMid, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{entry.notes}</p>
-                        </div>
-                      );
-                    })}
-                    {engagementEntries.length > 3 && (
-                      <p className="text-xs text-center" style={{ color: T.navyLight }}>+{engagementEntries.length - 3} more entries</p>
-                    )}
-                    <button onClick={onOpenEngagement} className="w-full py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
-                      âœï¸ Edit & Add Interactions
-                    </button>
-                  </>
-                )}
+                        );
+                      })}
+                      {engagementEntries.length > 3 && <p className="text-xs text-center" style={{ color: T.navyLight }}>+{engagementEntries.length - 3} more entries</p>}
+                      <button onClick={onOpenEngagement} className="w-full py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
+                        {"\u270F\uFE0F"} Edit &amp; Add Interactions
+                      </button>
+                    </>
+                }
               </div>
             )}
           </div>
-
-          {/* Back footer */}
           <div style={{ padding: "10px 16px", borderTop: `1px solid ${T.border}`, flexShrink: 0 }}>
             <p className="text-xs font-semibold truncate" style={{ color: T.navyDark }}>{stakeholder.name}</p>
             <p className="text-[10px]" style={{ color: T.navyLight }}>{stakeholder.organization}</p>
@@ -578,362 +509,152 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
   );
 }
 
-// â”€â”€â”€ Excel Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── HTML Export ──────────────────────────────────────────────────────────────
 
-async function exportToExcel(
+function exportToHTML(
   stakeholders: Stakeholder[],
   query: { sector: string; region: string },
   engagementLog: Record<string, EngagementEntry[]>
 ) {
-  const XLSX = await import("xlsx");
-
-  // â”€â”€ Colour palette (Beyond Group brand) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const NAVY       = "00003057";
-  const CRIMSON    = "00CB333B";
-  const WHITE      = "00FFFFFF";
-  const LIGHT_GRAY = "00F4F5F7";
-  const MID_GRAY   = "00D0D3D4";
-  const SUPPORTIVE_BG = "00E6F4EA";
-  const NEUTRAL_BG    = "00FFF8E1";
-  const OPPOSED_BG    = "00FDECEA";
-  const SUPPORTIVE_FG = "00166534";
-  const NEUTRAL_FG    = "00854D0E";
-  const OPPOSED_FG    = "00991B1B";
-
-  const CAT_COLORS: Record<string, string> = {
-    "Government & Regulatory":            "001D4ED8",
-    "Private Sector":                     "000F766E",
-    "Civil Society & NGOs":               "007E22CE",
-    "Media & Communications":             "00B45309",
-    "Academic & Research":                "000369A1",
-    "International Organizations & Donors": "000D9488",
-  };
-
   const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const wb = XLSX.utils.book_new();
-
-  // â”€â”€ Helper: apply style to a cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  type CellStyle = {
-    font?: { bold?: boolean; color?: { rgb: string }; sz?: number; name?: string };
-    fill?: { fgColor: { rgb: string }; patternType: string };
-    alignment?: { horizontal?: string; vertical?: string; wrapText?: boolean };
-    border?: { bottom?: { style: string; color: { rgb: string } } };
-  };
-
-  function styleCell(ws: import("xlsx").WorkSheet, addr: string, style: CellStyle) {
-    if (!ws[addr]) ws[addr] = { t: "z", v: "" };
-    ws[addr].s = style;
-  }
-
-  function setCell(ws: import("xlsx").WorkSheet, addr: string, value: string | number, style?: CellStyle) {
-    ws[addr] = { t: typeof value === "number" ? "n" : "s", v: value };
-    if (style) ws[addr].s = style;
-  }
-
-  const navyHeader: CellStyle = {
-    font: { bold: true, color: { rgb: WHITE }, sz: 11, name: "Calibri" },
-    fill: { fgColor: { rgb: NAVY }, patternType: "solid" },
-    alignment: { horizontal: "left", vertical: "center", wrapText: false },
-  };
-
-  const crimsonHeader: CellStyle = {
-    font: { bold: true, color: { rgb: WHITE }, sz: 10, name: "Calibri" },
-    fill: { fgColor: { rgb: CRIMSON }, patternType: "solid" },
-    alignment: { horizontal: "center", vertical: "center" },
-  };
-
-  const subHeader: CellStyle = {
-    font: { bold: true, color: { rgb: NAVY }, sz: 10, name: "Calibri" },
-    fill: { fgColor: { rgb: MID_GRAY }, patternType: "solid" },
-    alignment: { horizontal: "left", vertical: "center" },
-    border: { bottom: { style: "thin", color: { rgb: NAVY } } },
-  };
-
-  const bodyCell: CellStyle = {
-    font: { color: { rgb: NAVY }, sz: 10, name: "Calibri" },
-    fill: { fgColor: { rgb: WHITE }, patternType: "solid" },
-    alignment: { horizontal: "left", vertical: "top", wrapText: true },
-  };
-
-  const altCell: CellStyle = {
-    ...bodyCell,
-    fill: { fgColor: { rgb: LIGHT_GRAY }, patternType: "solid" },
-  };
-
-  // â”€â”€ SHEET 1: COVER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const coverData: (string | number)[][] = [
-    [""],
-    ["STAKEHOLDER INTELLIGENCE REPORT"],
-    ["Beyond Group Consulting"],
-    [""],
-    ["Sector", query.sector],
-    ["Region", query.region],
-    ["Date Generated", now],
-    ["Total Stakeholders", stakeholders.length],
-    [""],
-    ["STANCE SUMMARY"],
-    ["Supportive", stakeholders.filter(s => s.stance === "supportive").length],
-    ["Neutral",    stakeholders.filter(s => s.stance === "neutral").length],
-    ["Opposed",    stakeholders.filter(s => s.stance === "opposed").length],
-    [""],
-    ["CATEGORY BREAKDOWN"],
-  ];
-  const catCounts: Record<string, number> = {};
-  for (const s of stakeholders) {
-    const c = s.category || "Uncategorized";
-    catCounts[c] = (catCounts[c] || 0) + 1;
-  }
-  for (const [cat, count] of Object.entries(catCounts)) coverData.push([cat, count]);
-  coverData.push([""], ["CONFIDENTIAL â€” For client use only"]);
-
-  const coverSheet = XLSX.utils.aoa_to_sheet(coverData);
-  coverSheet["!cols"] = [{ wch: 36 }, { wch: 44 }];
-  coverSheet["!rows"] = [{ hpt: 8 }, { hpt: 32 }, { hpt: 20 }];
-
-  // Style cover cells
-  setCell(coverSheet, "A2", "STAKEHOLDER INTELLIGENCE REPORT", {
-    font: { bold: true, color: { rgb: WHITE }, sz: 18, name: "Calibri" },
-    fill: { fgColor: { rgb: NAVY }, patternType: "solid" },
-    alignment: { horizontal: "left", vertical: "center" },
-  });
-  setCell(coverSheet, "A3", "Beyond Group Consulting", {
-    font: { bold: false, color: { rgb: WHITE }, sz: 12, name: "Calibri" },
-    fill: { fgColor: { rgb: CRIMSON }, patternType: "solid" },
-    alignment: { horizontal: "left", vertical: "center" },
-  });
-  ["A5","A6","A7","A8"].forEach(addr => styleCell(coverSheet, addr, subHeader));
-  ["B5","B6","B7","B8"].forEach(addr => styleCell(coverSheet, addr, bodyCell));
-  setCell(coverSheet, "A10", "STANCE SUMMARY", navyHeader);
-  setCell(coverSheet, "A15", "CATEGORY BREAKDOWN", navyHeader);
-
-  // Colour stance rows
-  if (coverSheet["A11"]) coverSheet["A11"].s = { font: { bold: true, color: { rgb: SUPPORTIVE_FG } }, fill: { fgColor: { rgb: SUPPORTIVE_BG }, patternType: "solid" } };
-  if (coverSheet["A12"]) coverSheet["A12"].s = { font: { bold: true, color: { rgb: NEUTRAL_FG } }, fill: { fgColor: { rgb: NEUTRAL_BG }, patternType: "solid" } };
-  if (coverSheet["A13"]) coverSheet["A13"].s = { font: { bold: true, color: { rgb: OPPOSED_FG } }, fill: { fgColor: { rgb: OPPOSED_BG }, patternType: "solid" } };
-
-  XLSX.utils.book_append_sheet(wb, coverSheet, "Cover");
-
-  // â”€â”€ SHEET 2: MASTER OVERVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const masterHeaders = [
-    "No.", "Name / Role", "Organization", "Current Officeholder",
-    "Category", "Type", "Stance", "Influence Score",
-    "Key Position 1", "Key Position 2", "Key Position 3",
-    "Engagement Recommendation", "Contact", "Interactions Logged", "Generated Date",
-  ];
-
   const sorted = [...stakeholders].sort((a, b) => b.influence_score - a.influence_score);
-  const masterRows = sorted.map((s, i) => [
-    i + 1,
-    s.name,
-    s.organization,
-    s.current_officeholder ?? "To be verified",
-    s.category ?? "",
-    TYPE_LABELS[s.type],
-    s.stance.charAt(0).toUpperCase() + s.stance.slice(1),
-    s.influence_score,
-    s.key_positions[0] ?? "",
-    s.key_positions[1] ?? "",
-    s.key_positions[2] ?? "",
-    s.engagement_recommendation ?? "",
-    s.contact ?? "",
-    (engagementLog[s.name] ?? []).length,
-    s.generated_date ?? "",
-  ]);
-
-  const masterSheet = XLSX.utils.aoa_to_sheet([masterHeaders, ...masterRows]);
-  masterSheet["!cols"] = [
-    {wch:5},{wch:36},{wch:30},{wch:26},{wch:28},{wch:16},
-    {wch:13},{wch:10},{wch:38},{wch:38},{wch:38},{wch:44},{wch:32},{wch:12},{wch:14},
-  ];
-  masterSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
-
-  // Style header row
-  masterHeaders.forEach((_, ci) => {
-    const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-    if (!masterSheet[addr]) masterSheet[addr] = { t: "s", v: masterHeaders[ci] };
-    masterSheet[addr].s = crimsonHeader;
-  });
-
-  // Style data rows with stance colour + alternating
-  sorted.forEach((s, ri) => {
-    const stanceBg = s.stance === "supportive" ? SUPPORTIVE_BG : s.stance === "opposed" ? OPPOSED_BG : NEUTRAL_BG;
-    const stanceFg = s.stance === "supportive" ? SUPPORTIVE_FG : s.stance === "opposed" ? OPPOSED_FG : NEUTRAL_FG;
-    masterHeaders.forEach((_, ci) => {
-      const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
-      if (!masterSheet[addr]) masterSheet[addr] = { t: "z", v: "" };
-      // Stance column gets colour, rest get alternating rows
-      if (ci === 6) {
-        masterSheet[addr].s = {
-          font: { bold: true, color: { rgb: stanceFg }, sz: 10, name: "Calibri" },
-          fill: { fgColor: { rgb: stanceBg }, patternType: "solid" },
-          alignment: { horizontal: "center", vertical: "top" },
-        };
-      } else {
-        masterSheet[addr].s = ri % 2 === 0 ? bodyCell : altCell;
-      }
-    });
-  });
-
-  XLSX.utils.book_append_sheet(wb, masterSheet, "Master Overview");
-
-  // â”€â”€ SHEETS 3-8: ONE PER CATEGORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const allEntries = Object.values(engagementLog).flat().sort((a, b) => b.date.localeCompare(a.date));
+  const CAT_COLORS_HEX: Record<string, string> = {
+    "Government & Regulatory": "#1d4ed8", "Private Sector": "#0f766e",
+    "Civil Society & NGOs": "#7e22ce", "Media & Communications": "#b45309",
+    "Academic & Research": "#0369a1", "International Organizations & Donors": "#0d9488",
+  };
   const catGroups: Record<string, Stakeholder[]> = {};
-  for (const s of stakeholders) {
-    const c = s.category || "Uncategorized";
-    (catGroups[c] = catGroups[c] || []).push(s);
-  }
-
-  const detailHeaders = [
-    "Name / Role", "Organization", "Current Officeholder", "Type", "Stance",
-    "Influence\nScore", "Key Position 1", "Key Position 2", "Key Position 3",
-    "Engagement Recommendation", "Contact", "Sources", "Generated Date",
-  ];
-
-  for (const [cat, group] of Object.entries(catGroups)) {
-    const catColor = CAT_COLORS[cat] ?? NAVY;
-    const rows = group
-      .sort((a, b) => b.influence_score - a.influence_score)
-      .map(s => [
-        s.name,
-        s.organization,
-        s.current_officeholder ?? "To be verified",
-        TYPE_LABELS[s.type],
-        s.stance.charAt(0).toUpperCase() + s.stance.slice(1),
-        s.influence_score,
-        s.key_positions[0] ?? "",
-        s.key_positions[1] ?? "",
-        s.key_positions[2] ?? "",
-        s.engagement_recommendation ?? "",
-        s.contact ?? "",
-        (s.sources ?? []).join("\n"),
-        s.generated_date ?? "",
-      ]);
-
-    const ws = XLSX.utils.aoa_to_sheet([detailHeaders, ...rows]);
-    ws["!cols"] = [
-      {wch:36},{wch:30},{wch:26},{wch:16},{wch:13},
-      {wch:10},{wch:38},{wch:38},{wch:38},{wch:44},{wch:32},{wch:50},{wch:14},
-    ];
-    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
-
-    // Category colour header
-    detailHeaders.forEach((_, ci) => {
-      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-      if (!ws[addr]) ws[addr] = { t: "s", v: detailHeaders[ci] };
-      ws[addr].s = {
-        font: { bold: true, color: { rgb: WHITE }, sz: 10, name: "Calibri" },
-        fill: { fgColor: { rgb: catColor }, patternType: "solid" },
-        alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      };
-    });
-
-    // Style data rows
-    rows.forEach((_, ri) => {
-      detailHeaders.forEach((__, ci) => {
-        const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
-        if (!ws[addr]) ws[addr] = { t: "z", v: "" };
-        ws[addr].s = ri % 2 === 0 ? bodyCell : altCell;
-      });
-    });
-
-    const sheetName = cat.length > 31 ? cat.slice(0, 28) + "â€¦" : cat;
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  }
-
-  // â”€â”€ SHEET: INFLUENCE MATRIX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Table layout: rows = influence bands, cols = stance
-  // Stakeholder names placed in the appropriate cell
-  const matrixHeaders = ["Influence Band", "Supportive", "Neutral", "Opposed"];
+  for (const s of sorted) { const c = s.category || "Uncategorized"; (catGroups[c] = catGroups[c] || []).push(s); }
+  const stanceCount = { supportive: stakeholders.filter(s => s.stance === "supportive").length, neutral: stakeholders.filter(s => s.stance === "neutral").length, opposed: stakeholders.filter(s => s.stance === "opposed").length };
   const bands = [
-    { label: "Very High (9-10)", min: 9, max: 10 },
-    { label: "High (7-8)",       min: 7, max: 8  },
-    { label: "Medium (5-6)",     min: 5, max: 6  },
-    { label: "Low (3-4)",        min: 3, max: 4  },
-    { label: "Minimal (1-2)",    min: 1, max: 2  },
+    { label: "Very High (9–10)", min: 9, max: 10 }, { label: "High (7–8)", min: 7, max: 8 },
+    { label: "Medium (5–6)", min: 5, max: 6 }, { label: "Low (3–4)", min: 3, max: 4 }, { label: "Minimal (1–2)", min: 1, max: 2 },
   ];
+  const stanceStyle = (s: string) => s === "supportive" ? "background:#e6f4ea;color:#166534;font-weight:700" : s === "opposed" ? "background:#fdecea;color:#991b1b;font-weight:700" : "background:#fff8e1;color:#854d0e;font-weight:700";
+  const dots = (score: number) => Array.from({ length: 10 }).map((_, i) => `<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${i < score ? (i < 4 ? "#cb333b" : i < 7 ? "#f59e0b" : "#ef4444") : "#d0d3d4"};margin-right:1px"></span>`).join("") + `<span style="font-size:10px;color:#7a92a8;margin-left:4px">${score}/10</span>`;
 
-  const matrixRows = bands.map(band => {
-    const inBand = stakeholders.filter(s => s.influence_score >= band.min && s.influence_score <= band.max);
-    return [
-      band.label,
-      inBand.filter(s => s.stance === "supportive").map(s => s.name).join("\n") || "â€”",
-      inBand.filter(s => s.stance === "neutral").map(s => s.name).join("\n") || "â€”",
-      inBand.filter(s => s.stance === "opposed").map(s => s.name).join("\n") || "â€”",
-    ];
-  });
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stakeholder Report — ${query.sector}, ${query.region}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Calibri,Arial,sans-serif;font-size:13px;color:#003057;background:#f4f5f7}
+.page{max-width:1200px;margin:0 auto;padding:40px 32px}
+.cover-header{background:#003057;color:white;padding:36px 40px 24px;border-radius:6px 6px 0 0}
+.cover-header h1{font-size:26px;font-weight:700}.cover-sub{background:#cb333b;color:white;padding:10px 40px;font-size:14px;font-weight:600;border-radius:0 0 6px 6px;margin-bottom:28px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.meta-box{background:white;border:1px solid rgba(0,48,87,0.12);border-radius:4px;padding:14px 18px}
+.meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#cb333b;margin-bottom:3px}
+.meta-value{font-size:15px;font-weight:700;color:#003057}
+.stance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.stance-box{padding:14px;border-radius:4px;text-align:center}.stance-box .count{font-size:30px;font-weight:700}.stance-box .label{font-size:11px;font-weight:700;text-transform:uppercase;margin-top:2px}
+.section-title{background:#003057;color:white;padding:9px 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-radius:4px;margin:28px 0 10px}
+table{width:100%;border-collapse:collapse;background:white;border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,48,87,.08);margin-bottom:8px}
+th{background:#cb333b;color:white;padding:8px 11px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left}
+td{padding:9px 11px;border-bottom:1px solid rgba(0,48,87,.07);font-size:12px;vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}tr:nth-child(even) td{background:#f4f5f7}tr:nth-child(odd) td{background:white}
+.matrix-th-band{background:#003057}.matrix-th-sup{background:#166534}.matrix-th-neu{background:#854d0e}.matrix-th-opp{background:#991b1b}
+.matrix-band{background:#003057!important;color:white;font-weight:700;font-size:11px}
+.matrix-sup{background:#e6f4ea!important;color:#166534}.matrix-neu{background:#fff8e1!important;color:#854d0e}.matrix-opp{background:#fdecea!important;color:#991b1b}
+.warn{background:#fff8e1;border:1px solid rgba(180,83,9,.3);color:#854d0e;padding:10px 14px;border-radius:4px;font-size:12px;font-weight:600;margin-bottom:24px}
+.footer{margin-top:40px;padding-top:14px;border-top:1px solid rgba(0,48,87,.12);color:#7a92a8;font-size:11px;display:flex;justify-content:space-between}
+</style></head><body><div class="page">
 
-  const matrixSheet = XLSX.utils.aoa_to_sheet([matrixHeaders, ...matrixRows]);
-  matrixSheet["!cols"] = [{ wch: 18 }, { wch: 44 }, { wch: 44 }, { wch: 44 }];
-  matrixSheet["!rows"] = [{ hpt: 20 }, { hpt: 80 }, { hpt: 80 }, { hpt: 60 }, { hpt: 60 }, { hpt: 40 }];
+<div class="cover-header">
+  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px">Beyond Group Consulting</div>
+  <h1>Stakeholder Intelligence Report</h1>
+  <div style="margin-top:6px;font-size:14px;color:rgba(255,255,255,.8)">${query.sector} &nbsp;·&nbsp; ${query.region}</div>
+</div>
+<div class="cover-sub">Confidential — Prepared for client use &nbsp;·&nbsp; Generated ${now}</div>
 
-  // Header row
-  matrixHeaders.forEach((_, ci) => {
-    const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-    if (!matrixSheet[addr]) matrixSheet[addr] = { t: "s", v: matrixHeaders[ci] };
-    matrixSheet[addr].s = navyHeader;
-  });
+<div class="meta-grid">
+  <div class="meta-box"><div class="meta-label">Sector</div><div class="meta-value">${query.sector}</div></div>
+  <div class="meta-box"><div class="meta-label">Region</div><div class="meta-value">${query.region}</div></div>
+  <div class="meta-box"><div class="meta-label">Total Stakeholders</div><div class="meta-value">${stakeholders.length}</div></div>
+  <div class="meta-box"><div class="meta-label">Date Generated</div><div class="meta-value">${now}</div></div>
+</div>
 
-  // Colour columns by stance + band label
-  matrixRows.forEach((_, ri) => {
-    const bandCell = XLSX.utils.encode_cell({ r: ri + 1, c: 0 });
-    if (!matrixSheet[bandCell]) matrixSheet[bandCell] = { t: "z", v: "" };
-    matrixSheet[bandCell].s = subHeader;
+<div class="stance-grid">
+  <div class="stance-box" style="background:#e6f4ea;color:#166534"><div class="count">${stanceCount.supportive}</div><div class="label">Supportive</div></div>
+  <div class="stance-box" style="background:#fff8e1;color:#854d0e"><div class="count">${stanceCount.neutral}</div><div class="label">Neutral</div></div>
+  <div class="stance-box" style="background:#fdecea;color:#991b1b"><div class="count">${stanceCount.opposed}</div><div class="label">Opposed</div></div>
+</div>
 
-    const stanceStyles = [
-      { bg: SUPPORTIVE_BG, fg: SUPPORTIVE_FG },
-      { bg: NEUTRAL_BG,    fg: NEUTRAL_FG    },
-      { bg: OPPOSED_BG,    fg: OPPOSED_FG    },
-    ];
-    stanceStyles.forEach(({ bg, fg }, ci) => {
-      const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci + 1 });
-      if (!matrixSheet[addr]) matrixSheet[addr] = { t: "z", v: "" };
-      matrixSheet[addr].s = {
-        font: { color: { rgb: fg }, sz: 10, name: "Calibri" },
-        fill: { fgColor: { rgb: bg }, patternType: "solid" },
-        alignment: { horizontal: "left", vertical: "top", wrapText: true },
-      };
-    });
-  });
+<div class="warn">&#9888;&#65039; AI-assisted research — verify all information before use in client engagements.</div>
 
-  XLSX.utils.book_append_sheet(wb, matrixSheet, "Influence Matrix");
+<div class="section-title">Master Overview — All Stakeholders (${stakeholders.length})</div>
+<table><thead><tr><th>#</th><th>Name / Role</th><th>Organization</th><th>Officeholder</th><th>Category</th><th>Stance</th><th>Influence</th><th>Contact</th><th>Interactions</th></tr></thead><tbody>
+${sorted.map((s, i) => `<tr>
+  <td style="color:#7a92a8;font-size:11px">${i + 1}</td>
+  <td style="font-weight:700">${s.name}</td>
+  <td>${s.organization}</td>
+  <td style="color:#4a6080">${s.current_officeholder ?? "To be verified"}</td>
+  <td><span style="background:${CAT_COLORS_HEX[s.category] ?? "#555"}20;color:${CAT_COLORS_HEX[s.category] ?? "#555"};padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600">${s.category ?? ""}</span></td>
+  <td><span style="${stanceStyle(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase() + s.stance.slice(1)}</span></td>
+  <td>${dots(s.influence_score)}</td>
+  <td style="font-size:11px">${s.contact ? `<a href="${s.contact}" style="color:#0369a1">${s.contact.length > 35 ? s.contact.slice(0, 32) + "…" : s.contact}</a>` : "—"}</td>
+  <td style="text-align:center">${(engagementLog[s.name] ?? []).length || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
 
-  // â”€â”€ SHEET: ENGAGEMENT LOG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const allEntries = Object.values(engagementLog).flat()
-    .sort((a, b) => b.date.localeCompare(a.date));
+${Object.entries(catGroups).map(([cat, group]) => {
+  const color = CAT_COLORS_HEX[cat] ?? "#003057";
+  return `<div class="section-title" style="background:${color}">${cat} (${group.length})</div>
+<table><thead><tr>
+  <th style="background:${color}">Name / Role</th><th style="background:${color}">Organization</th>
+  <th style="background:${color}">Officeholder</th><th style="background:${color}">Stance</th>
+  <th style="background:${color}">Influence</th><th style="background:${color}">Key Position 1</th>
+  <th style="background:${color}">Key Position 2</th><th style="background:${color}">Key Position 3</th>
+  <th style="background:${color}">Engagement Recommendation</th><th style="background:${color}">Sources</th>
+</tr></thead><tbody>
+${group.map(s => `<tr>
+  <td style="font-weight:700">${s.name}</td><td>${s.organization}</td>
+  <td style="color:#4a6080">${s.current_officeholder ?? "To be verified"}</td>
+  <td><span style="${stanceStyle(s.stance)};padding:2px 8px;border-radius:3px;font-size:11px">${s.stance.charAt(0).toUpperCase() + s.stance.slice(1)}</span></td>
+  <td>${dots(s.influence_score)}</td>
+  <td>${s.key_positions[0] ?? ""}</td><td>${s.key_positions[1] ?? ""}</td><td>${s.key_positions[2] ?? ""}</td>
+  <td style="color:#4a6080">${s.engagement_recommendation ?? ""}</td>
+  <td style="font-size:11px">${(s.sources ?? []).map(src => `<a href="${src}" style="color:#0369a1;display:block">${src.length > 50 ? src.slice(0, 47) + "…" : src}</a>`).join("") || "—"}</td>
+</tr>`).join("")}
+</tbody></table>`;
+}).join("")}
 
-  if (allEntries.length > 0) {
-    const engHeaders = ["Stakeholder", "Date", "Type", "Outcome", "Notes"];
-    const engRows = allEntries.map(e => [e.stakeholderName, e.date, e.type, e.outcome, e.notes]);
-    const engSheet = XLSX.utils.aoa_to_sheet([engHeaders, ...engRows]);
-    engSheet["!cols"] = [{ wch: 34 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 70 }];
+<div class="section-title">Influence Matrix</div>
+<table><thead><tr>
+  <th class="matrix-th-band">Influence Band</th>
+  <th class="matrix-th-sup">Supportive</th>
+  <th class="matrix-th-neu">Neutral</th>
+  <th class="matrix-th-opp">Opposed</th>
+</tr></thead><tbody>
+${bands.map(band => {
+  const inBand = stakeholders.filter(s => s.influence_score >= band.min && s.influence_score <= band.max);
+  const cell = (stance: string, cls: string) => `<td class="${cls}">${inBand.filter(s => s.stance === stance).map(s => `<div style="margin-bottom:3px">&#8226; ${s.name} <span style="color:#888;font-size:10px">(${s.organization})</span></div>`).join("") || "<span style='color:#aaa'>—</span>"}</td>`;
+  return `<tr><td class="matrix-band">${band.label}</td>${cell("supportive","matrix-sup")}${cell("neutral","matrix-neu")}${cell("opposed","matrix-opp")}</tr>`;
+}).join("")}
+</tbody></table>
 
-    engHeaders.forEach((_, ci) => {
-      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
-      if (!engSheet[addr]) engSheet[addr] = { t: "s", v: engHeaders[ci] };
-      engSheet[addr].s = crimsonHeader;
-    });
+${allEntries.length > 0 ? `<div class="section-title">Engagement Log (${allEntries.length} interactions)</div>
+<table><thead><tr><th>Stakeholder</th><th>Date</th><th>Type</th><th>Outcome</th><th>Notes</th></tr></thead><tbody>
+${allEntries.map(e => {
+  const oc = e.outcome === "Positive" ? "background:#e6f4ea;color:#166534" : e.outcome === "Negative" ? "background:#fdecea;color:#991b1b" : e.outcome === "Pending" ? "background:#ede9fe;color:#3730a3" : "background:#fff8e1;color:#854d0e";
+  return `<tr><td style="font-weight:600">${e.stakeholderName}</td><td style="color:#7a92a8">${e.date}</td><td>${e.type}</td><td><span style="${oc};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600">${e.outcome}</span></td><td>${e.notes}</td></tr>`;
+}).join("")}
+</tbody></table>` : ""}
 
-    engRows.forEach((row, ri) => {
-      const outcomeBg = row[3] === "Positive" ? SUPPORTIVE_BG : row[3] === "Negative" ? OPPOSED_BG : NEUTRAL_BG;
-      engHeaders.forEach((_, ci) => {
-        const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
-        if (!engSheet[addr]) engSheet[addr] = { t: "z", v: "" };
-        engSheet[addr].s = ci === 3
-          ? { font: { bold: true, sz: 10, name: "Calibri" }, fill: { fgColor: { rgb: outcomeBg }, patternType: "solid" }, alignment: { horizontal: "center" } }
-          : (ri % 2 === 0 ? bodyCell : altCell);
-      });
-    });
+<div class="footer">
+  <span>Beyond Group Consulting &nbsp;·&nbsp; Stakeholder Intelligence Platform</span>
+  <span>Powered by Claude AI &nbsp;·&nbsp; ${now}</span>
+</div>
+</div></body></html>`;
 
-    XLSX.utils.book_append_sheet(wb, engSheet, "Engagement Log");
-  }
-
-  // â”€â”€ Download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
   const safeSector = query.sector.replace(/[^a-zA-Z0-9_-]/g, "_");
   const safeRegion = query.region.replace(/[^a-zA-Z0-9_-]/g, "_");
-  XLSX.writeFile(wb, `BeyondGroup_Stakeholder_Map_${safeSector}_${safeRegion}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  a.href = url; a.download = `BeyondGroup_Stakeholder_Map_${safeSector}_${safeRegion}_${new Date().toISOString().slice(0, 10)}.html`;
+  a.click(); URL.revokeObjectURL(url);
 }
 
-// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DiscoverPage() {
   const [sector, setSector] = useState("");
@@ -988,97 +709,58 @@ export default function DiscoverPage() {
     "Local economic actors & labour",
   ];
 
-  const TOTAL_BATCHES = 5;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const s = sector.trim(); const r = region.trim();
     if (!s || !r) return;
-
     setLoading(true); setBatchProgress(null); setError(null);
-    setStakeholders(null); setResultMode(null); setActiveCategory(null);
-    setLastQuery({ sector: s, region: r });
+    setStakeholders(null); setResultMode(null); setActiveCategory(null); setLastQuery({ sector: s, region: r });
 
-    // Handle document upload
     let docStakeholders: Stakeholder[] = [];
     if (uploadedFile) {
-      try {
-        const formData = new FormData(); formData.append("file", uploadedFile);
-        const res = await fetch("/api/extract", { method: "POST", body: formData });
-        if (res.ok) { const data = await res.json(); docStakeholders = data.stakeholders; }
-      } catch { /* non-fatal */ }
+      try { const fd = new FormData(); fd.append("file", uploadedFile); const res = await fetch("/api/extract", { method: "POST", body: fd }); if (res.ok) { const d = await res.json(); docStakeholders = d.stakeholders; } } catch { /* non-fatal */ }
       setUploadedFile(null); if (fileInputRef.current) fileInputRef.current.value = "";
     }
 
-    // Demo data check
     const demo = getDemoData(s, r);
-    if (demo) {
-      await new Promise(res => setTimeout(res, 600));
-      setStakeholders([...demo.stakeholders, ...docStakeholders]);
-      setResultMode("demo"); setLoading(false); return;
-    }
+    if (demo) { await new Promise(res => setTimeout(res, 600)); setStakeholders([...demo.stakeholders, ...docStakeholders]); setResultMode("demo"); setLoading(false); return; }
 
-    // â”€â”€ Run 5 batches sequentially, showing progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let allStakeholders: Stakeholder[] = [...docStakeholders];
-    let firstBatchFailed = false;
 
-    for (let batchNum = 1; batchNum <= TOTAL_BATCHES; batchNum++) {
-      setBatchProgress({ current: batchNum, total: TOTAL_BATCHES, label: BATCH_LABELS[batchNum - 1] });
-
+    for (let batchNum = 1; batchNum <= 5; batchNum++) {
+      setBatchProgress({ current: batchNum, total: 5, label: BATCH_LABELS[batchNum - 1] });
       try {
         const existingNames = allStakeholders.map(s => s.name);
-        const res = await fetch("/api/discover", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sector: s, region: r, batch: batchNum, existingNames }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
-        }
-
+        const res = await fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sector: s, region: r, batch: batchNum, existingNames }) });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error((d as { error?: string }).error || `HTTP ${res.status}`); }
         const data = await res.json();
-        const newBatch: Stakeholder[] = data.stakeholders;
-        allStakeholders = [...allStakeholders, ...newBatch];
-
-        // Show results immediately after first batch
-        if (batchNum === 1) {
-          setStakeholders([...allStakeholders]);
-          setResultMode("live");
-          setLoading(false);
-        } else {
-          setStakeholders([...allStakeholders]);
-        }
+        allStakeholders = [...allStakeholders, ...data.stakeholders];
+        if (batchNum === 1) { setStakeholders([...allStakeholders]); setResultMode("live"); setLoading(false); }
+        else { setStakeholders([...allStakeholders]); }
       } catch (err) {
         if (batchNum === 1) {
-          firstBatchFailed = true;
           const fallback = getDemoData(s, r);
           if (fallback) { setStakeholders([...fallback.stakeholders, ...docStakeholders]); setResultMode("demo"); }
           else if (docStakeholders.length > 0) { setStakeholders(docStakeholders); setResultMode("live"); }
           else { setError(err instanceof Error ? err.message : "Unknown error"); }
           setLoading(false); setBatchProgress(null); return;
         }
-        // Batches 2-5 failing is non-fatal â€” just continue
         console.warn(`Batch ${batchNum} failed (non-fatal):`, err);
       }
     }
-
-    if (firstBatchFailed) return;
-    setLoading(false);
-    setBatchProgress(null);
+    setLoading(false); setBatchProgress(null);
   };
 
   const stanceSummary = stakeholders ? { supportive: stakeholders.filter(s => s.stance === "supportive").length, neutral: stakeholders.filter(s => s.stance === "neutral").length, opposed: stakeholders.filter(s => s.stance === "opposed").length } : null;
   const categoryCounts: Record<string, number> = {};
   if (stakeholders) for (const s of stakeholders) { const c = s.category || "Uncategorized"; categoryCounts[c] = (categoryCounts[c] || 0) + 1; }
   const filteredStakeholders = stakeholders ? (activeCategory ? stakeholders.filter(s => s.category === activeCategory) : stakeholders) : null;
-  const handleExport = async () => { if (!stakeholders || !lastQuery) return; setExporting(true); try { await exportToExcel(stakeholders, lastQuery, engagementLog); } finally { setExporting(false); } };
+  const handleExport = () => { if (!stakeholders || !lastQuery) return; setExporting(true); try { exportToHTML(stakeholders, lastQuery, engagementLog); } finally { setExporting(false); } };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: T.pageBg }}>
 
-      {/* Header â€” stays navy to anchor the brand */}
+      {/* Header */}
       <header className="flex items-center justify-between px-8 py-4" style={{ background: T.headerBg, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
         <Link href="/" className="flex items-center gap-3">
           <div className="w-1 h-6" style={{ background: T.crimson }} />
@@ -1090,10 +772,10 @@ export default function DiscoverPage() {
         </div>
       </header>
 
-      {/* Warning banner */}
+      {/* Warning */}
       <div className="flex items-start gap-3 px-8 py-3 text-sm" style={{ background: T.yellowBg, borderBottom: `1px solid ${T.yellowBorder}`, color: T.yellow }}>
         <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-        <span><strong>AI-assisted research</strong> â€” profiles are generated for discovery purposes only. Verify all information before use in client engagements.</span>
+        <span><strong>AI-assisted research</strong> — profiles are generated for discovery purposes only. Verify all information before use in client engagements.</span>
       </div>
 
       <main className="flex-1 px-6 py-10 max-w-7xl mx-auto w-full">
@@ -1113,14 +795,12 @@ export default function DiscoverPage() {
                 <input suppressHydrationWarning type="text" value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g. Sub-Saharan Africa, Southeast Asia, EU" className="w-full px-4 py-3 text-sm outline-none" style={inputStyle} onFocus={e => (e.target.style.borderColor = T.crimsonBorder)} onBlur={e => (e.target.style.borderColor = T.border)} />
               </div>
               <button type="submit" disabled={loading || !sector.trim() || !region.trim()} className="px-8 py-3 text-sm font-bold tracking-wider uppercase text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shrink-0" style={{ background: T.crimson, borderRadius: "2px", minWidth: "140px" }} onMouseEnter={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimsonLight; }} onMouseLeave={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimson; }}>
-                {loading ? "Analysingâ€¦" : "Analyse"}
+                {loading ? "Analysing…" : "Analyse"}
               </button>
             </div>
-
-            {/* Document upload */}
             <div className="flex flex-wrap items-center gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${T.border}` }}>
               <input ref={fileInputRef} type="file" accept=".pdf,.docx,.pptx,.txt" onChange={handleFileSelect} className="hidden" />
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ color: T.indigo, border: `1px solid ${T.indigoBorder}`, borderRadius: "2px", background: T.indigoBg }}>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase hover:opacity-80" style={{ color: T.indigo, border: `1px solid ${T.indigoBorder}`, borderRadius: "2px", background: T.indigoBg }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" /></svg>Upload Document
               </button>
               {uploadedFile && (
@@ -1129,9 +809,9 @@ export default function DiscoverPage() {
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     {uploadedFile.name}
                   </span>
-                  <button type="button" onClick={handleRemoveFile} style={{ color: T.navyLight }} className="hover:opacity-70"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                  <button type="button" onClick={handleRemoveFile} style={{ color: T.navyLight }}><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                   {!sector.trim() || !region.trim()
-                    ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extractingâ€¦" : "Extract Stakeholders"}</button>
+                    ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extracting…" : "Extract Stakeholders"}</button>
                     : <span className="text-xs" style={{ color: T.navyLight }}>Will be included in analysis</span>
                   }
                 </div>
@@ -1142,45 +822,36 @@ export default function DiscoverPage() {
           </form>
         </div>
 
-        {/* Loading */}
+        {/* Loading states */}
         {uploadLoading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.indigo, borderTopColor: "transparent" }} />
-            <p className="text-sm" style={{ color: T.navyMid }}>Extracting stakeholders from documentâ€¦</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Extracting stakeholders from document…</p>
           </div>
         )}
         {loading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} />
-            <p className="text-sm" style={{ color: T.navyMid }}>Starting analysis for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>â€¦</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Starting analysis for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>…</p>
           </div>
         )}
 
-        {/* Progress bar â€” shown while batches 2-5 load */}
+        {/* Progress bar */}
         {batchProgress && (
           <div className="mb-6 rounded p-5" style={{ background: T.white, border: `1px solid ${T.border}`, boxShadow: "0 2px 12px rgba(0,48,87,0.07)" }}>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-bold" style={{ color: T.navyDark }}>
-                  Discovering stakeholders â€” Batch {batchProgress.current} of {batchProgress.total}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: T.navyMid }}>{batchProgress.label}â€¦</p>
+                <p className="text-sm font-bold" style={{ color: T.navyDark }}>Discovering stakeholders — Batch {batchProgress.current} of {batchProgress.total}</p>
+                <p className="text-xs mt-0.5" style={{ color: T.navyMid }}>{batchProgress.label}…</p>
               </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: T.crimsonBg, color: T.crimson, border: `1px solid ${T.crimsonBorder}` }}>
-                {stakeholders?.length ?? 0} found so far
-              </span>
+              <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: T.crimsonBg, color: T.crimson, border: `1px solid ${T.crimsonBorder}` }}>{stakeholders?.length ?? 0} found so far</span>
             </div>
             <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: T.border }}>
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%`, background: `linear-gradient(90deg, ${T.navyDark}, ${T.crimson})` }}
-              />
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%`, background: `linear-gradient(90deg, ${T.navyDark}, ${T.crimson})` }} />
             </div>
             <div className="flex justify-between mt-1.5">
               {Array.from({ length: batchProgress.total }).map((_, i) => (
-                <span key={i} className="text-[10px] font-semibold" style={{ color: i < batchProgress.current ? T.crimson : T.navyLight }}>
-                  {i + 1}
-                </span>
+                <span key={i} className="text-[10px] font-semibold" style={{ color: i < batchProgress.current ? T.crimson : T.navyLight }}>{i + 1}</span>
               ))}
             </div>
           </div>
@@ -1198,7 +869,7 @@ export default function DiscoverPage() {
                   <h2 className="text-lg font-bold" style={{ color: T.navyDark }}>{stakeholders.length} Stakeholders Identified</h2>
                   {resultMode && <ModeBadge mode={resultMode} />}
                 </div>
-                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} Â· {lastQuery?.region}</p>
+                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} · {lastQuery?.region}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 {stanceSummary && (
@@ -1222,14 +893,15 @@ export default function DiscoverPage() {
                 </button>
               </div>
               <div className="flex gap-3 flex-wrap">
-                <button onClick={() => setShowOverview(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
+                <button onClick={() => setShowOverview(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase hover:opacity-80" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                   Engagement {totalEngagementEntries > 0 ? `(${totalEngagementEntries})` : "Log"}
                 </button>
-                <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 disabled:opacity-40 transition-opacity" style={{ background: "#0f766e", borderRadius: "3px" }}>
-                  {exporting ? <><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.white, borderTopColor: "transparent" }} />Exportingâ€¦</> : <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>Export to Excel</>}
+                <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 disabled:opacity-40" style={{ background: "#0f766e", borderRadius: "3px" }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                  Export Report
                 </button>
-                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 transition-opacity" style={{ background: T.crimson, borderRadius: "3px" }}>
+                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90" style={{ background: T.crimson, borderRadius: "3px" }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>Add Stakeholder
                 </button>
               </div>
@@ -1248,7 +920,7 @@ export default function DiscoverPage() {
             {/* List */}
             {viewMode === "list" && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" style={{ animation: "fadeIn 0.25s ease-out" }}>
-                {(filteredStakeholders ?? []).sort((a,b) => b.influence_score - a.influence_score).map((s,i) => (
+                {(filteredStakeholders ?? []).sort((a, b) => b.influence_score - a.influence_score).map((s, i) => (
                   <StakeholderCard key={`${s.name}-${i}`} stakeholder={s} engagementEntries={engagementLog[s.name] ?? []} onOpenEngagement={() => setEngagementTarget(s)} />
                 ))}
               </div>
@@ -1278,7 +950,7 @@ export default function DiscoverPage() {
       </main>
 
       <footer className="px-8 py-4 text-xs text-center" style={{ color: T.navyLight, borderTop: `1px solid ${T.border}` }}>
-        Powered by Claude AI Â· Stakeholder Intelligence Platform
+        Powered by Claude AI · Stakeholder Intelligence Platform
       </footer>
 
       {/* Modals */}
@@ -1288,5 +960,3 @@ export default function DiscoverPage() {
     </div>
   );
 }
-
-
