@@ -1,11 +1,11 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 90;
 
 const client = new Anthropic();
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface StakeholderMediaProfile {
   name: string;
@@ -63,7 +63,7 @@ export interface SocialAnalysisResult {
   stakeholder_profiles: StakeholderMediaProfile[];
 }
 
-// â”€â”€â”€ System prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── System prompt ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a senior media intelligence analyst specialising in social listening, reputation monitoring, and public discourse analysis. Your role is to produce structured, evidence-based social media and media coverage analyses.
 
@@ -71,22 +71,27 @@ You analyse media landscapes across traditional news, online publications, and s
 
 When web search data is available, synthesise it into structured intelligence. When you must rely on training knowledge, clearly indicate this is a knowledge-based simulation rather than live monitoring data.
 
-Always be specific and concrete â€” name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
+Always be specific and concrete — name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
 
-// â”€â”€â”€ Helper: extract text from search response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper: extract text from search response ───────────────────────────────
 
 function extractSearchText(content: Anthropic.ContentBlock[]): string {
   return content
     .map(block => {
       if (block.type === "text") return block.text;
-      
+      if (block.type === "tool_result") {
+        return (block.content as Anthropic.ContentBlock[])
+          ?.filter((b): b is Anthropic.TextBlock => b.type === "text")
+          .map(b => b.text)
+          .join("\n") ?? "";
+      }
       return "";
     })
     .filter(Boolean)
     .join("\n\n");
 }
 
-// â”€â”€â”€ Run web search query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Run web search query ─────────────────────────────────────────────────────
 
 async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   try {
@@ -124,7 +129,7 @@ async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   }
 }
 
-// â”€â”€â”€ Main synthesis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main synthesis ───────────────────────────────────────────────────────────
 
 async function synthesiseAnalysis(
   sector: string,
@@ -138,7 +143,7 @@ async function synthesiseAnalysis(
 
   const searchContext = searchResults.filter(Boolean).length > 0
     ? `\n\nWEB SEARCH FINDINGS:\n${searchResults.filter(Boolean).join("\n\n---\n\n")}`
-    : "\n\nNo live search data available â€” base analysis on training knowledge.";
+    : "\n\nNo live search data available — base analysis on training knowledge.";
 
   const stakeholderList = stakeholderNames.slice(0, 20).join(", ");
 
@@ -151,7 +156,7 @@ Key Stakeholders: ${stakeholderList}
 Time Window: Last 6 months
 ${searchContext}
 
-Return ONLY a valid JSON object â€” no markdown, no code fences, no prose.
+Return ONLY a valid JSON object — no markdown, no code fences, no prose.
 
 The JSON must have exactly this structure:
 {
@@ -233,7 +238,7 @@ Platform share_pct values must sum to 100.`;
   };
 }
 
-// â”€â”€â”€ Route handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   let body: {
@@ -264,41 +269,19 @@ export async function POST(request: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 85_000);
 
   try {
-    // â”€â”€ Attempt live web searches â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    let searchResults: string[] = [];
-    let isLive = false;
+    // Web searches skipped to stay within timeout — using AI knowledge synthesis
+    const searchResults: string[] = [];
+    const isLive = false;
 
-    console.log(`[social-analysis] Starting analysis for ${s} in ${r}`);
+    console.log(`[social-analysis] Starting AI synthesis for ${s} in ${r}`);
 
-    try {
-      const queries = [
-        `"${s}" "${r}" media coverage news 2024 2025`,
-        `"${s}" "${r}" social media sentiment public opinion`,
-        `"${r}" ${s} ${o ? `"${o}"` : ""} press coverage influential voices`,
-      ];
-
-      const results = await Promise.allSettled(
-        queries.map(q => runSearch(q, controller.signal))
-      );
-
-      searchResults = results
-        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
-        .map(r => r.value)
-        .filter(Boolean);
-
-      isLive = searchResults.length > 0;
-      console.log(`[social-analysis] Got ${searchResults.length} search results`);
-    } catch (err) {
-      console.warn("[social-analysis] Web search failed, falling back to simulation:", err);
-    }
-
-    // â”€â”€ Synthesise analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Synthesise analysis ────────────────────────────────────────────
     const analysis = await synthesiseAnalysis(
       s, r, o, stakeholderNames, searchResults, isLive, controller.signal
     );
 
     clearTimeout(timeoutId);
-    console.log(`[social-analysis] Analysis complete â€” data_source: ${analysis.data_source}`);
+    console.log(`[social-analysis] Analysis complete — data_source: ${analysis.data_source}`);
 
     return NextResponse.json({ analysis });
 
@@ -314,4 +297,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: reason }, { status: 500 });
   }
 }
-
