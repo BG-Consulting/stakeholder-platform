@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, lazy, Suspense, useEffect } from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { getDemoData, DEMO_HINTS } from "../lib/demoData";
 
 const MapView = lazy(() => import("./MapView"));
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type EngagementEntry = {
   id: string;
@@ -18,7 +18,7 @@ type EngagementEntry = {
   outcome: "Positive" | "Neutral" | "Negative" | "Pending";
 };
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Storage helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const STORAGE_KEY = "stakeholder_engagement_log";
 
@@ -38,7 +38,7 @@ function saveEngagementLog(log: Record<string, EngagementEntry[]>) {
   } catch {}
 }
 
-// ─── Design tokens (light mode, Beyond Group brand) ───────────────────────────
+// â”€â”€â”€ Design tokens (light mode, Beyond Group brand) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const T = {
   pageBg: "#f4f5f7",
   cardBg: "#f0f2f5",
@@ -86,7 +86,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
 };
 
-// ─── Shared config ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Shared config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type ViewMode = "list" | "map";
 
@@ -125,12 +125,12 @@ const OUTCOME_COLORS: Record<EngagementEntry["outcome"], { bg: string; text: str
 };
 
 const TYPE_ICONS: Record<EngagementEntry["type"], string> = {
-  Meeting: "🤝", Interview: "🎤", Email: "✉️", Call: "📞", Workshop: "🧩", Other: "📌",
+  Meeting: "ðŸ¤", Interview: "ðŸŽ¤", Email: "âœ‰ï¸", Call: "ðŸ“ž", Workshop: "ðŸ§©", Other: "ðŸ“Œ",
 };
 
 type ResultMode = "demo" | "live";
 
-// ─── Small shared components ──────────────────────────────────────────────────
+// â”€â”€â”€ Small shared components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ModeBadge({ mode }: { mode: ResultMode }) {
   if (mode === "demo") {
@@ -164,7 +164,7 @@ function ContactInfo({ contact }: { contact?: string }) {
   if (!contact) return null;
   const isEmail = contact.includes("@") && !contact.includes("/");
   const href = isEmail ? `mailto:${contact}` : contact;
-  const display = contact.length > 40 ? contact.slice(0, 37) + "…" : contact;
+  const display = contact.length > 40 ? contact.slice(0, 37) + "â€¦" : contact;
   return (
     <div className="flex items-center gap-1.5 mt-1">
       {isEmail
@@ -176,7 +176,7 @@ function ContactInfo({ contact }: { contact?: string }) {
   );
 }
 
-// ─── Add Stakeholder Modal ────────────────────────────────────────────────────
+// â”€â”€â”€ Add Stakeholder Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => void; onClose: () => void }) {
   const [form, setForm] = useState({
@@ -255,7 +255,7 @@ function AddStakeholderModal({ onAdd, onClose }: { onAdd: (s: Stakeholder) => vo
   );
 }
 
-// ─── Engagement Log Modal ─────────────────────────────────────────────────────
+// â”€â”€â”€ Engagement Log Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholder: Stakeholder; entries: EngagementEntry[]; onSave: (e: EngagementEntry[]) => void; onClose: () => void }) {
   const [log, setLog] = useState<EngagementEntry[]>(entries);
@@ -301,7 +301,7 @@ function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholde
                 </div>
               </div>
               <div><label className="block text-xs mb-1" style={{ color: T.navyMid }}>Notes *</label>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Summarise the interaction, key takeaways, follow-ups…" rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} />
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Summarise the interaction, key takeaways, follow-upsâ€¦" rows={3} className="w-full px-3 py-2 text-sm outline-none resize-none" style={inputStyle} />
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setAdding(false)} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: T.navyMid, border: `1px solid ${T.border}`, borderRadius: "2px" }}>Cancel</button>
@@ -336,7 +336,7 @@ function EngagementModal({ stakeholder, entries, onSave, onClose }: { stakeholde
   );
 }
 
-// ─── Engagement Overview Modal ────────────────────────────────────────────────
+// â”€â”€â”€ Engagement Overview Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EngagementOverviewModal({ log, onClose }: { log: Record<string, EngagementEntry[]>; onClose: () => void }) {
   const all = Object.values(log).flat().sort((a, b) => b.date.localeCompare(a.date));
@@ -371,7 +371,7 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-base">{TYPE_ICONS[entry.type]}</span>
-                        <div><span className="text-sm font-semibold" style={{ color: T.navyDark }}>{entry.type}</span><span className="mx-1.5 text-xs" style={{ color: T.navyLight }}>·</span><span className="text-xs font-medium" style={{ color: T.indigo }}>{entry.stakeholderName}</span><span className="ml-2 text-xs" style={{ color: T.navyLight }}>{entry.date}</span></div>
+                        <div><span className="text-sm font-semibold" style={{ color: T.navyDark }}>{entry.type}</span><span className="mx-1.5 text-xs" style={{ color: T.navyLight }}>Â·</span><span className="text-xs font-medium" style={{ color: T.indigo }}>{entry.stakeholderName}</span><span className="ml-2 text-xs" style={{ color: T.navyLight }}>{entry.date}</span></div>
                       </div>
                       <span className="px-2 py-0.5 rounded text-xs font-semibold shrink-0" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
                     </div>
@@ -386,7 +386,7 @@ function EngagementOverviewModal({ log, onClose }: { log: Record<string, Engagem
   );
 }
 
-// ─── Stakeholder Card ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Stakeholder Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: { stakeholder: Stakeholder; engagementEntries: EngagementEntry[]; onOpenEngagement: () => void }) {
   const [flipped, setFlipped] = useState(false);
@@ -428,7 +428,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
             <div style={{ borderTop: `1px solid ${T.border}` }} />
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: T.crimson }}>Key Positions</p>
-              <ul className="flex flex-col gap-1.5">{stakeholder.key_positions.map((pos, i) => <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}><span style={{ color: T.crimson, marginTop: "1px" }}>›</span><span>{pos}</span></li>)}</ul>
+              <ul className="flex flex-col gap-1.5">{stakeholder.key_positions.map((pos, i) => <li key={i} className="flex gap-2 text-sm" style={{ color: T.navyMid }}><span style={{ color: T.crimson, marginTop: "1px" }}>â€º</span><span>{pos}</span></li>)}</ul>
             </div>
             <div style={{ borderTop: `1px solid ${T.border}` }} />
             <div>
@@ -448,7 +448,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                 <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: isStale ? T.red : T.navyLight }}>
                   {isStale && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>}
                   Generated {genDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                  {isStale && " · Verify currency"}
+                  {isStale && " Â· Verify currency"}
                 </span>
               );
             })()}
@@ -484,7 +484,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                 </div>
                 {(!stakeholder.sources || stakeholder.sources.length === 0) ? (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs text-center py-2" style={{ color: T.navyLight }}>No specific sources returned — search manually:</p>
+                    <p className="text-xs text-center py-2" style={{ color: T.navyLight }}>No specific sources returned â€” search manually:</p>
                     <a
                       href={`https://www.google.com/search?q=${encodeURIComponent(stakeholder.name + " " + stakeholder.organization)}`}
                       target="_blank" rel="noopener noreferrer"
@@ -517,7 +517,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                           <span className="text-xs font-bold shrink-0" style={{ color: T.crimson }}>Source {i + 1}</span>
                           {year !== null ? (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: isOld ? T.yellowBg : T.greenBg, color: isOld ? T.yellow : T.green, border: `1px solid ${isOld ? T.yellowBorder : T.greenBorder}` }}>
-                              {year} {isOld && "· May be outdated"}
+                              {year} {isOld && "Â· May be outdated"}
                             </span>
                           ) : (
                             <span className="text-[10px]" style={{ color: T.navyLight }}>Year unknown</span>
@@ -548,7 +548,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                       return (
                         <div key={entry.id} className="rounded p-3" style={{ background: T.cardBg, border: `1px solid ${T.border}` }}>
                           <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} · {entry.date}</span>
+                            <span className="text-xs font-semibold" style={{ color: T.navyDark }}>{entry.type} Â· {entry.date}</span>
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ background: oc.bg, color: oc.text, border: `1px solid ${oc.border}` }}>{entry.outcome}</span>
                           </div>
                           <p className="text-xs leading-relaxed" style={{ color: T.navyMid, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{entry.notes}</p>
@@ -559,7 +559,7 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
                       <p className="text-xs text-center" style={{ color: T.navyLight }}>+{engagementEntries.length - 3} more entries</p>
                     )}
                     <button onClick={onOpenEngagement} className="w-full py-2 text-xs font-bold tracking-wider uppercase hover:opacity-80 transition-opacity" style={{ background: T.indigoBg, border: `1px solid ${T.indigoBorder}`, borderRadius: "3px", color: T.indigo }}>
-                      ✏️ Edit & Add Interactions
+                      âœï¸ Edit & Add Interactions
                     </button>
                   </>
                 )}
@@ -578,47 +578,362 @@ function StakeholderCard({ stakeholder, engagementEntries, onOpenEngagement }: {
   );
 }
 
-// ─── Excel Export ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Excel Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-async function exportToExcel(stakeholders: Stakeholder[], query: { sector: string; region: string }, engagementLog: Record<string, EngagementEntry[]>) {
+async function exportToExcel(
+  stakeholders: Stakeholder[],
+  query: { sector: string; region: string },
+  engagementLog: Record<string, EngagementEntry[]>
+) {
   const XLSX = await import("xlsx");
+
+  // â”€â”€ Colour palette (Beyond Group brand) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const NAVY       = "00003057";
+  const CRIMSON    = "00CB333B";
+  const WHITE      = "00FFFFFF";
+  const LIGHT_GRAY = "00F4F5F7";
+  const MID_GRAY   = "00D0D3D4";
+  const SUPPORTIVE_BG = "00E6F4EA";
+  const NEUTRAL_BG    = "00FFF8E1";
+  const OPPOSED_BG    = "00FDECEA";
+  const SUPPORTIVE_FG = "00166534";
+  const NEUTRAL_FG    = "00854D0E";
+  const OPPOSED_FG    = "00991B1B";
+
+  const CAT_COLORS: Record<string, string> = {
+    "Government & Regulatory":            "001D4ED8",
+    "Private Sector":                     "000F766E",
+    "Civil Society & NGOs":               "007E22CE",
+    "Media & Communications":             "00B45309",
+    "Academic & Research":                "000369A1",
+    "International Organizations & Donors": "000D9488",
+  };
+
   const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   const wb = XLSX.utils.book_new();
-  const summaryRows: (string | number)[][] = [
-    ["STAKEHOLDER INTELLIGENCE REPORT"], [`Sector: ${query.sector}`], [`Region: ${query.region}`],
-    [`Generated: ${now}`], [`Total Stakeholders: ${stakeholders.length}`], [],
-    ["STANCE BREAKDOWN"],
+
+  // â”€â”€ Helper: apply style to a cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  type CellStyle = {
+    font?: { bold?: boolean; color?: { rgb: string }; sz?: number; name?: string };
+    fill?: { fgColor: { rgb: string }; patternType: string };
+    alignment?: { horizontal?: string; vertical?: string; wrapText?: boolean };
+    border?: { bottom?: { style: string; color: { rgb: string } } };
+  };
+
+  function styleCell(ws: import("xlsx").WorkSheet, addr: string, style: CellStyle) {
+    if (!ws[addr]) ws[addr] = { t: "z", v: "" };
+    ws[addr].s = style;
+  }
+
+  function setCell(ws: import("xlsx").WorkSheet, addr: string, value: string | number, style?: CellStyle) {
+    ws[addr] = { t: typeof value === "number" ? "n" : "s", v: value };
+    if (style) ws[addr].s = style;
+  }
+
+  const navyHeader: CellStyle = {
+    font: { bold: true, color: { rgb: WHITE }, sz: 11, name: "Calibri" },
+    fill: { fgColor: { rgb: NAVY }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "center", wrapText: false },
+  };
+
+  const crimsonHeader: CellStyle = {
+    font: { bold: true, color: { rgb: WHITE }, sz: 10, name: "Calibri" },
+    fill: { fgColor: { rgb: CRIMSON }, patternType: "solid" },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
+
+  const subHeader: CellStyle = {
+    font: { bold: true, color: { rgb: NAVY }, sz: 10, name: "Calibri" },
+    fill: { fgColor: { rgb: MID_GRAY }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "center" },
+    border: { bottom: { style: "thin", color: { rgb: NAVY } } },
+  };
+
+  const bodyCell: CellStyle = {
+    font: { color: { rgb: NAVY }, sz: 10, name: "Calibri" },
+    fill: { fgColor: { rgb: WHITE }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "top", wrapText: true },
+  };
+
+  const altCell: CellStyle = {
+    ...bodyCell,
+    fill: { fgColor: { rgb: LIGHT_GRAY }, patternType: "solid" },
+  };
+
+  // â”€â”€ SHEET 1: COVER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const coverData: (string | number)[][] = [
+    [""],
+    ["STAKEHOLDER INTELLIGENCE REPORT"],
+    ["Beyond Group Consulting"],
+    [""],
+    ["Sector", query.sector],
+    ["Region", query.region],
+    ["Date Generated", now],
+    ["Total Stakeholders", stakeholders.length],
+    [""],
+    ["STANCE SUMMARY"],
     ["Supportive", stakeholders.filter(s => s.stance === "supportive").length],
-    ["Neutral", stakeholders.filter(s => s.stance === "neutral").length],
-    ["Opposed", stakeholders.filter(s => s.stance === "opposed").length],
-    [], ["CATEGORY BREAKDOWN"],
+    ["Neutral",    stakeholders.filter(s => s.stance === "neutral").length],
+    ["Opposed",    stakeholders.filter(s => s.stance === "opposed").length],
+    [""],
+    ["CATEGORY BREAKDOWN"],
   ];
   const catCounts: Record<string, number> = {};
-  for (const s of stakeholders) { const c = s.category || "Uncategorized"; catCounts[c] = (catCounts[c] || 0) + 1; }
-  for (const [cat, count] of Object.entries(catCounts)) summaryRows.push([cat, count]);
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
-  summarySheet["!cols"] = [{ wch: 44 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
-
-  const headers = ["Name / Role","Organization","Current Officeholder","Type","Stance","Influence Score","Key Position 1","Key Position 2","Key Position 3","Engagement Recommendation","Contact","Engagement Entries","Sources"];
-  const catGroups: Record<string, Stakeholder[]> = {};
-  for (const s of stakeholders) { const c = s.category || "Uncategorized"; (catGroups[c] = catGroups[c] || []).push(s); }
-  for (const [cat, group] of Object.entries(catGroups)) {
-    const rows = group.sort((a,b) => b.influence_score - a.influence_score).map(s => [s.name, s.organization, s.current_officeholder ?? "To be verified", TYPE_LABELS[s.type], s.stance.charAt(0).toUpperCase() + s.stance.slice(1), s.influence_score, s.key_positions[0]??"", s.key_positions[1]??"", s.key_positions[2]??"", s.engagement_recommendation??"", s.contact??"", (engagementLog[s.name]??[]).length, (s.sources??[]).join("; ")]);
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws["!cols"] = [{wch:34},{wch:28},{wch:24},{wch:16},{wch:13},{wch:10},{wch:36},{wch:36},{wch:36},{wch:44},{wch:30},{wch:12},{wch:50}];
-    XLSX.utils.book_append_sheet(wb, ws, cat.length > 31 ? cat.slice(0,28)+"…" : cat);
+  for (const s of stakeholders) {
+    const c = s.category || "Uncategorized";
+    catCounts[c] = (catCounts[c] || 0) + 1;
   }
-  const allEntries = Object.values(engagementLog).flat().sort((a,b) => b.date.localeCompare(a.date));
+  for (const [cat, count] of Object.entries(catCounts)) coverData.push([cat, count]);
+  coverData.push([""], ["CONFIDENTIAL â€” For client use only"]);
+
+  const coverSheet = XLSX.utils.aoa_to_sheet(coverData);
+  coverSheet["!cols"] = [{ wch: 36 }, { wch: 44 }];
+  coverSheet["!rows"] = [{ hpt: 8 }, { hpt: 32 }, { hpt: 20 }];
+
+  // Style cover cells
+  setCell(coverSheet, "A2", "STAKEHOLDER INTELLIGENCE REPORT", {
+    font: { bold: true, color: { rgb: WHITE }, sz: 18, name: "Calibri" },
+    fill: { fgColor: { rgb: NAVY }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "center" },
+  });
+  setCell(coverSheet, "A3", "Beyond Group Consulting", {
+    font: { bold: false, color: { rgb: WHITE }, sz: 12, name: "Calibri" },
+    fill: { fgColor: { rgb: CRIMSON }, patternType: "solid" },
+    alignment: { horizontal: "left", vertical: "center" },
+  });
+  ["A5","A6","A7","A8"].forEach(addr => styleCell(coverSheet, addr, subHeader));
+  ["B5","B6","B7","B8"].forEach(addr => styleCell(coverSheet, addr, bodyCell));
+  setCell(coverSheet, "A10", "STANCE SUMMARY", navyHeader);
+  setCell(coverSheet, "A15", "CATEGORY BREAKDOWN", navyHeader);
+
+  // Colour stance rows
+  if (coverSheet["A11"]) coverSheet["A11"].s = { font: { bold: true, color: { rgb: SUPPORTIVE_FG } }, fill: { fgColor: { rgb: SUPPORTIVE_BG }, patternType: "solid" } };
+  if (coverSheet["A12"]) coverSheet["A12"].s = { font: { bold: true, color: { rgb: NEUTRAL_FG } }, fill: { fgColor: { rgb: NEUTRAL_BG }, patternType: "solid" } };
+  if (coverSheet["A13"]) coverSheet["A13"].s = { font: { bold: true, color: { rgb: OPPOSED_FG } }, fill: { fgColor: { rgb: OPPOSED_BG }, patternType: "solid" } };
+
+  XLSX.utils.book_append_sheet(wb, coverSheet, "Cover");
+
+  // â”€â”€ SHEET 2: MASTER OVERVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const masterHeaders = [
+    "No.", "Name / Role", "Organization", "Current Officeholder",
+    "Category", "Type", "Stance", "Influence Score",
+    "Key Position 1", "Key Position 2", "Key Position 3",
+    "Engagement Recommendation", "Contact", "Interactions Logged", "Generated Date",
+  ];
+
+  const sorted = [...stakeholders].sort((a, b) => b.influence_score - a.influence_score);
+  const masterRows = sorted.map((s, i) => [
+    i + 1,
+    s.name,
+    s.organization,
+    s.current_officeholder ?? "To be verified",
+    s.category ?? "",
+    TYPE_LABELS[s.type],
+    s.stance.charAt(0).toUpperCase() + s.stance.slice(1),
+    s.influence_score,
+    s.key_positions[0] ?? "",
+    s.key_positions[1] ?? "",
+    s.key_positions[2] ?? "",
+    s.engagement_recommendation ?? "",
+    s.contact ?? "",
+    (engagementLog[s.name] ?? []).length,
+    s.generated_date ?? "",
+  ]);
+
+  const masterSheet = XLSX.utils.aoa_to_sheet([masterHeaders, ...masterRows]);
+  masterSheet["!cols"] = [
+    {wch:5},{wch:36},{wch:30},{wch:26},{wch:28},{wch:16},
+    {wch:13},{wch:10},{wch:38},{wch:38},{wch:38},{wch:44},{wch:32},{wch:12},{wch:14},
+  ];
+  masterSheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+  // Style header row
+  masterHeaders.forEach((_, ci) => {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
+    if (!masterSheet[addr]) masterSheet[addr] = { t: "s", v: masterHeaders[ci] };
+    masterSheet[addr].s = crimsonHeader;
+  });
+
+  // Style data rows with stance colour + alternating
+  sorted.forEach((s, ri) => {
+    const stanceBg = s.stance === "supportive" ? SUPPORTIVE_BG : s.stance === "opposed" ? OPPOSED_BG : NEUTRAL_BG;
+    const stanceFg = s.stance === "supportive" ? SUPPORTIVE_FG : s.stance === "opposed" ? OPPOSED_FG : NEUTRAL_FG;
+    masterHeaders.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+      if (!masterSheet[addr]) masterSheet[addr] = { t: "z", v: "" };
+      // Stance column gets colour, rest get alternating rows
+      if (ci === 6) {
+        masterSheet[addr].s = {
+          font: { bold: true, color: { rgb: stanceFg }, sz: 10, name: "Calibri" },
+          fill: { fgColor: { rgb: stanceBg }, patternType: "solid" },
+          alignment: { horizontal: "center", vertical: "top" },
+        };
+      } else {
+        masterSheet[addr].s = ri % 2 === 0 ? bodyCell : altCell;
+      }
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, masterSheet, "Master Overview");
+
+  // â”€â”€ SHEETS 3-8: ONE PER CATEGORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const catGroups: Record<string, Stakeholder[]> = {};
+  for (const s of stakeholders) {
+    const c = s.category || "Uncategorized";
+    (catGroups[c] = catGroups[c] || []).push(s);
+  }
+
+  const detailHeaders = [
+    "Name / Role", "Organization", "Current Officeholder", "Type", "Stance",
+    "Influence\nScore", "Key Position 1", "Key Position 2", "Key Position 3",
+    "Engagement Recommendation", "Contact", "Sources", "Generated Date",
+  ];
+
+  for (const [cat, group] of Object.entries(catGroups)) {
+    const catColor = CAT_COLORS[cat] ?? NAVY;
+    const rows = group
+      .sort((a, b) => b.influence_score - a.influence_score)
+      .map(s => [
+        s.name,
+        s.organization,
+        s.current_officeholder ?? "To be verified",
+        TYPE_LABELS[s.type],
+        s.stance.charAt(0).toUpperCase() + s.stance.slice(1),
+        s.influence_score,
+        s.key_positions[0] ?? "",
+        s.key_positions[1] ?? "",
+        s.key_positions[2] ?? "",
+        s.engagement_recommendation ?? "",
+        s.contact ?? "",
+        (s.sources ?? []).join("\n"),
+        s.generated_date ?? "",
+      ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([detailHeaders, ...rows]);
+    ws["!cols"] = [
+      {wch:36},{wch:30},{wch:26},{wch:16},{wch:13},
+      {wch:10},{wch:38},{wch:38},{wch:38},{wch:44},{wch:32},{wch:50},{wch:14},
+    ];
+    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+    // Category colour header
+    detailHeaders.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
+      if (!ws[addr]) ws[addr] = { t: "s", v: detailHeaders[ci] };
+      ws[addr].s = {
+        font: { bold: true, color: { rgb: WHITE }, sz: 10, name: "Calibri" },
+        fill: { fgColor: { rgb: catColor }, patternType: "solid" },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      };
+    });
+
+    // Style data rows
+    rows.forEach((_, ri) => {
+      detailHeaders.forEach((__, ci) => {
+        const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+        if (!ws[addr]) ws[addr] = { t: "z", v: "" };
+        ws[addr].s = ri % 2 === 0 ? bodyCell : altCell;
+      });
+    });
+
+    const sheetName = cat.length > 31 ? cat.slice(0, 28) + "â€¦" : cat;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  }
+
+  // â”€â”€ SHEET: INFLUENCE MATRIX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Table layout: rows = influence bands, cols = stance
+  // Stakeholder names placed in the appropriate cell
+  const matrixHeaders = ["Influence Band", "Supportive", "Neutral", "Opposed"];
+  const bands = [
+    { label: "Very High (9-10)", min: 9, max: 10 },
+    { label: "High (7-8)",       min: 7, max: 8  },
+    { label: "Medium (5-6)",     min: 5, max: 6  },
+    { label: "Low (3-4)",        min: 3, max: 4  },
+    { label: "Minimal (1-2)",    min: 1, max: 2  },
+  ];
+
+  const matrixRows = bands.map(band => {
+    const inBand = stakeholders.filter(s => s.influence_score >= band.min && s.influence_score <= band.max);
+    return [
+      band.label,
+      inBand.filter(s => s.stance === "supportive").map(s => s.name).join("\n") || "â€”",
+      inBand.filter(s => s.stance === "neutral").map(s => s.name).join("\n") || "â€”",
+      inBand.filter(s => s.stance === "opposed").map(s => s.name).join("\n") || "â€”",
+    ];
+  });
+
+  const matrixSheet = XLSX.utils.aoa_to_sheet([matrixHeaders, ...matrixRows]);
+  matrixSheet["!cols"] = [{ wch: 18 }, { wch: 44 }, { wch: 44 }, { wch: 44 }];
+  matrixSheet["!rows"] = [{ hpt: 20 }, { hpt: 80 }, { hpt: 80 }, { hpt: 60 }, { hpt: 60 }, { hpt: 40 }];
+
+  // Header row
+  matrixHeaders.forEach((_, ci) => {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
+    if (!matrixSheet[addr]) matrixSheet[addr] = { t: "s", v: matrixHeaders[ci] };
+    matrixSheet[addr].s = navyHeader;
+  });
+
+  // Colour columns by stance + band label
+  matrixRows.forEach((_, ri) => {
+    const bandCell = XLSX.utils.encode_cell({ r: ri + 1, c: 0 });
+    if (!matrixSheet[bandCell]) matrixSheet[bandCell] = { t: "z", v: "" };
+    matrixSheet[bandCell].s = subHeader;
+
+    const stanceStyles = [
+      { bg: SUPPORTIVE_BG, fg: SUPPORTIVE_FG },
+      { bg: NEUTRAL_BG,    fg: NEUTRAL_FG    },
+      { bg: OPPOSED_BG,    fg: OPPOSED_FG    },
+    ];
+    stanceStyles.forEach(({ bg, fg }, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci + 1 });
+      if (!matrixSheet[addr]) matrixSheet[addr] = { t: "z", v: "" };
+      matrixSheet[addr].s = {
+        font: { color: { rgb: fg }, sz: 10, name: "Calibri" },
+        fill: { fgColor: { rgb: bg }, patternType: "solid" },
+        alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      };
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, matrixSheet, "Influence Matrix");
+
+  // â”€â”€ SHEET: ENGAGEMENT LOG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const allEntries = Object.values(engagementLog).flat()
+    .sort((a, b) => b.date.localeCompare(a.date));
+
   if (allEntries.length > 0) {
-    const engSheet = XLSX.utils.aoa_to_sheet([["Stakeholder","Date","Type","Outcome","Notes"], ...allEntries.map(e => [e.stakeholderName, e.date, e.type, e.outcome, e.notes])]);
-    engSheet["!cols"] = [{wch:34},{wch:12},{wch:12},{wch:12},{wch:60}];
+    const engHeaders = ["Stakeholder", "Date", "Type", "Outcome", "Notes"];
+    const engRows = allEntries.map(e => [e.stakeholderName, e.date, e.type, e.outcome, e.notes]);
+    const engSheet = XLSX.utils.aoa_to_sheet([engHeaders, ...engRows]);
+    engSheet["!cols"] = [{ wch: 34 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 70 }];
+
+    engHeaders.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
+      if (!engSheet[addr]) engSheet[addr] = { t: "s", v: engHeaders[ci] };
+      engSheet[addr].s = crimsonHeader;
+    });
+
+    engRows.forEach((row, ri) => {
+      const outcomeBg = row[3] === "Positive" ? SUPPORTIVE_BG : row[3] === "Negative" ? OPPOSED_BG : NEUTRAL_BG;
+      engHeaders.forEach((_, ci) => {
+        const addr = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+        if (!engSheet[addr]) engSheet[addr] = { t: "z", v: "" };
+        engSheet[addr].s = ci === 3
+          ? { font: { bold: true, sz: 10, name: "Calibri" }, fill: { fgColor: { rgb: outcomeBg }, patternType: "solid" }, alignment: { horizontal: "center" } }
+          : (ri % 2 === 0 ? bodyCell : altCell);
+      });
+    });
+
     XLSX.utils.book_append_sheet(wb, engSheet, "Engagement Log");
   }
-  XLSX.writeFile(wb, `Stakeholder_Map_${query.sector.replace(/[^a-zA-Z0-9_-]/g,"_")}_${query.region.replace(/[^a-zA-Z0-9_-]/g,"_")}_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+  // â”€â”€ Download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const safeSector = query.sector.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const safeRegion = query.region.replace(/[^a-zA-Z0-9_-]/g, "_");
+  XLSX.writeFile(wb, `BeyondGroup_Stakeholder_Map_${safeSector}_${safeRegion}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function DiscoverPage() {
   const [sector, setSector] = useState("");
@@ -706,7 +1021,7 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: T.pageBg }}>
 
-      {/* Header — stays navy to anchor the brand */}
+      {/* Header â€” stays navy to anchor the brand */}
       <header className="flex items-center justify-between px-8 py-4" style={{ background: T.headerBg, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
         <Link href="/" className="flex items-center gap-3">
           <div className="w-1 h-6" style={{ background: T.crimson }} />
@@ -721,7 +1036,7 @@ export default function DiscoverPage() {
       {/* Warning banner */}
       <div className="flex items-start gap-3 px-8 py-3 text-sm" style={{ background: T.yellowBg, borderBottom: `1px solid ${T.yellowBorder}`, color: T.yellow }}>
         <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-        <span><strong>AI-assisted research</strong> — profiles are generated for discovery purposes only. Verify all information before use in client engagements.</span>
+        <span><strong>AI-assisted research</strong> â€” profiles are generated for discovery purposes only. Verify all information before use in client engagements.</span>
       </div>
 
       <main className="flex-1 px-6 py-10 max-w-7xl mx-auto w-full">
@@ -741,7 +1056,7 @@ export default function DiscoverPage() {
                 <input suppressHydrationWarning type="text" value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g. Sub-Saharan Africa, Southeast Asia, EU" className="w-full px-4 py-3 text-sm outline-none" style={inputStyle} onFocus={e => (e.target.style.borderColor = T.crimsonBorder)} onBlur={e => (e.target.style.borderColor = T.border)} />
               </div>
               <button type="submit" disabled={loading || !sector.trim() || !region.trim()} className="px-8 py-3 text-sm font-bold tracking-wider uppercase text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shrink-0" style={{ background: T.crimson, borderRadius: "2px", minWidth: "140px" }} onMouseEnter={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimsonLight; }} onMouseLeave={e => { if (!loading) (e.target as HTMLElement).style.background = T.crimson; }}>
-                {loading ? "Analysing…" : "Analyse"}
+                {loading ? "Analysingâ€¦" : "Analyse"}
               </button>
             </div>
 
@@ -759,7 +1074,7 @@ export default function DiscoverPage() {
                   </span>
                   <button type="button" onClick={handleRemoveFile} style={{ color: T.navyLight }} className="hover:opacity-70"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                   {!sector.trim() || !region.trim()
-                    ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extracting…" : "Extract Stakeholders"}</button>
+                    ? <button type="button" onClick={handleExtractFromDocument} disabled={uploadLoading} className="px-4 py-1.5 text-xs font-bold tracking-wider uppercase text-white disabled:opacity-40" style={{ background: T.crimson, borderRadius: "2px" }}>{uploadLoading ? "Extractingâ€¦" : "Extract Stakeholders"}</button>
                     : <span className="text-xs" style={{ color: T.navyLight }}>Will be included in analysis</span>
                   }
                 </div>
@@ -774,13 +1089,13 @@ export default function DiscoverPage() {
         {uploadLoading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.indigo, borderTopColor: "transparent" }} />
-            <p className="text-sm" style={{ color: T.navyMid }}>Extracting stakeholders from document…</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Extracting stakeholders from documentâ€¦</p>
           </div>
         )}
         {loading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} />
-            <p className="text-sm" style={{ color: T.navyMid }}>Searching and analysing stakeholders for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>…</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Searching and analysing stakeholders for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>â€¦</p>
           </div>
         )}
 
@@ -796,7 +1111,7 @@ export default function DiscoverPage() {
                   <h2 className="text-lg font-bold" style={{ color: T.navyDark }}>{stakeholders.length} Stakeholders Identified</h2>
                   {resultMode && <ModeBadge mode={resultMode} />}
                 </div>
-                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} · {lastQuery?.region}</p>
+                <p className="text-sm" style={{ color: T.navyMid }}>{lastQuery?.sector} Â· {lastQuery?.region}</p>
               </div>
               <div className="flex flex-wrap gap-3">
                 {stanceSummary && (
@@ -825,7 +1140,7 @@ export default function DiscoverPage() {
                   Engagement {totalEngagementEntries > 0 ? `(${totalEngagementEntries})` : "Log"}
                 </button>
                 <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 disabled:opacity-40 transition-opacity" style={{ background: "#0f766e", borderRadius: "3px" }}>
-                  {exporting ? <><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.white, borderTopColor: "transparent" }} />Exporting…</> : <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>Export to Excel</>}
+                  {exporting ? <><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.white, borderTopColor: "transparent" }} />Exportingâ€¦</> : <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>Export to Excel</>}
                 </button>
                 <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 transition-opacity" style={{ background: T.crimson, borderRadius: "3px" }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>Add Stakeholder
@@ -854,7 +1169,7 @@ export default function DiscoverPage() {
             {viewMode === "list" && loadingMore && (
               <div className="flex items-center justify-center gap-3 mt-6 px-5 py-4 rounded" style={{ background: T.white, border: `1px solid ${T.border}` }}>
                 <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} />
-                <p className="text-sm" style={{ color: T.navyMid }}>Discovering additional regional and local stakeholders…</p>
+                <p className="text-sm" style={{ color: T.navyMid }}>Discovering additional regional and local stakeholdersâ€¦</p>
               </div>
             )}
 
@@ -863,7 +1178,7 @@ export default function DiscoverPage() {
               <Suspense fallback={<div className="flex items-center justify-center rounded" style={{ height: "600px", background: T.white, border: `1px solid ${T.border}` }}><div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} /></div>}>
                 <div style={{ animation: "fadeIn 0.25s ease-out" }}>
                   <MapView stakeholders={filteredStakeholders ?? []} />
-                  {loadingMore && <div className="flex items-center justify-center gap-3 mt-4 px-5 py-3 rounded" style={{ background: T.white, border: `1px solid ${T.border}` }}><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} /><p className="text-sm" style={{ color: T.navyMid }}>Discovering additional stakeholders…</p></div>}
+                  {loadingMore && <div className="flex items-center justify-center gap-3 mt-4 px-5 py-3 rounded" style={{ background: T.white, border: `1px solid ${T.border}` }}><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} /><p className="text-sm" style={{ color: T.navyMid }}>Discovering additional stakeholdersâ€¦</p></div>}
                 </div>
               </Suspense>
             )}
@@ -883,7 +1198,7 @@ export default function DiscoverPage() {
       </main>
 
       <footer className="px-8 py-4 text-xs text-center" style={{ color: T.navyLight, borderTop: `1px solid ${T.border}` }}>
-        Powered by Claude AI · Stakeholder Intelligence Platform
+        Powered by Claude AI Â· Stakeholder Intelligence Platform
       </footer>
 
       {/* Modals */}
@@ -893,3 +1208,5 @@ export default function DiscoverPage() {
     </div>
   );
 }
+
+
