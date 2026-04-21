@@ -1,11 +1,11 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 90;
 
 const client = new Anthropic();
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface StakeholderMediaProfile {
   name: string;
@@ -63,7 +63,7 @@ export interface SocialAnalysisResult {
   stakeholder_profiles: StakeholderMediaProfile[];
 }
 
-// â”€â”€â”€ System prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── System prompt ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a senior media intelligence analyst specialising in social listening, reputation monitoring, and public discourse analysis. Your role is to produce structured, evidence-based social media and media coverage analyses.
 
@@ -71,9 +71,9 @@ You analyse media landscapes across traditional news, online publications, and s
 
 When web search data is available, synthesise it into structured intelligence. When you must rely on training knowledge, clearly indicate this is a knowledge-based simulation rather than live monitoring data.
 
-Always be specific and concrete â€” name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
+Always be specific and concrete — name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
 
-// â”€â”€â”€ Helper: extract text from search response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper: extract text from search response ───────────────────────────────
 
 function extractSearchText(content: Anthropic.ContentBlock[]): string {
   return content
@@ -85,7 +85,7 @@ function extractSearchText(content: Anthropic.ContentBlock[]): string {
     .join("\n\n");
 }
 
-// â”€â”€â”€ Run web search query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Run web search query ─────────────────────────────────────────────────────
 
 async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   try {
@@ -123,7 +123,7 @@ async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   }
 }
 
-// â”€â”€â”€ Main synthesis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main synthesis ───────────────────────────────────────────────────────────
 
 async function synthesiseAnalysis(
   sector: string,
@@ -137,71 +137,60 @@ async function synthesiseAnalysis(
 
   const searchContext = searchResults.filter(Boolean).length > 0
     ? `\n\nWEB SEARCH FINDINGS:\n${searchResults.filter(Boolean).join("\n\n---\n\n")}`
-    : "\n\nNo live search data available â€” base analysis on training knowledge.";
+    : "\n\nNo live search data available — base analysis on training knowledge.";
 
-  const stakeholderList = stakeholderNames.slice(0, 8).join(", ");
+  const stakeholderList = stakeholderNames.slice(0, 5).join(", ");
 
-  const prompt = `Produce a comprehensive social media and media intelligence analysis for the following:
+  // Truncate objectives to avoid huge prompts
+  const shortObjectives = objectives ? objectives.slice(0, 150) : undefined;
+
+  const prompt = `Social media and media intelligence analysis. Return ONLY valid JSON, no prose.
 
 Sector: ${sector}
 Region: ${region}
-${objectives ? `Objectives: ${objectives}` : ""}
-Key Stakeholders: ${stakeholderList}
-Time Window: Last 6 months
-${searchContext}
+${shortObjectives ? `Topic: ${shortObjectives}` : ""}
+Top stakeholders: ${stakeholderList}
 
-Return ONLY a valid JSON object â€” no markdown, no code fences, no prose.
-
-The JSON must have exactly this structure:
+JSON structure (keep all text values SHORT — max 1 sentence each):
 {
-  "total_estimated_mentions": <number>,
-  "sentiment_breakdown": { "positive": <0-100>, "neutral": <0-100>, "negative": <0-100> },
+  "total_estimated_mentions": <number 50-5000>,
+  "sentiment_breakdown": {"positive":<n>,"neutral":<n>,"negative":<n>},
   "volume_trend": [
-    { "period": "Month 6 ago", "volume": "Low|Medium|High", "note": "brief note" },
-    { "period": "Month 5 ago", "volume": "Low|Medium|High", "note": "brief note" },
-    { "period": "Month 4 ago", "volume": "Low|Medium|High", "note": "brief note" },
-    { "period": "Month 3 ago", "volume": "Low|Medium|High", "note": "brief note" },
-    { "period": "Month 2 ago", "volume": "Low|Medium|High", "note": "brief note" },
-    { "period": "Last month", "volume": "Low|Medium|High", "note": "brief note" }
+    {"period":"6mo ago","volume":"Low|Medium|High","note":"<10 words>"},
+    {"period":"5mo ago","volume":"Low|Medium|High","note":"<10 words>"},
+    {"period":"4mo ago","volume":"Low|Medium|High","note":"<10 words>"},
+    {"period":"3mo ago","volume":"Low|Medium|High","note":"<10 words>"},
+    {"period":"2mo ago","volume":"Low|Medium|High","note":"<10 words>"},
+    {"period":"Last month","volume":"Low|Medium|High","note":"<10 words>"}
   ],
   "platform_breakdown": [
-    { "platform": "name", "share_pct": <number>, "sentiment": "Positive|Neutral|Negative|Mixed", "notes": "brief" }
+    {"platform":"<name>","share_pct":<n>,"sentiment":"Positive|Neutral|Negative|Mixed","notes":"<10 words>"}
   ],
   "key_narratives": [
-    { "theme": "title", "framing": "Administrative|Political|Crisis|Positive|Neutral", "frequency": "High|Medium|Low", "description": "2-3 sentences" }
+    {"theme":"<title>","framing":"Administrative|Political|Crisis|Positive|Neutral","frequency":"High|Medium|Low","description":"<20 words>"}
   ],
   "topic_links": [
-    { "topic": "name", "strength": "Strong|Moderate|Weak", "description": "1 sentence" }
+    {"topic":"<name>","strength":"Strong|Moderate|Weak","description":"<15 words>"}
   ],
   "influential_actors": [
-    { "name": "name", "type": "Media|Government|NGO|Academic|Individual|Platform", "reach": "High|Medium|Low", "stance": "Supportive|Neutral|Critical" }
+    {"name":"<name>","type":"Media|Government|NGO|Academic|Individual|Platform","reach":"High|Medium|Low","stance":"Supportive|Neutral|Critical"}
   ],
-  "public_engagement_summary": "1-2 paragraph summary of public engagement patterns",
-  "risk_signals": ["signal 1", "signal 2"],
-  "opportunities": ["opportunity 1", "opportunity 2"],
-  "overall_summary": "2 paragraph executive summary of the media landscape",
+  "public_engagement_summary": "<2 sentences>",
+  "risk_signals": ["<1 sentence each, max 3>"],
+  "opportunities": ["<1 sentence each, max 3>"],
+  "overall_summary": "<3 sentences total>",
   "stakeholder_profiles": [
-    {
-      "name": "stakeholder name",
-      "organization": "org",
-      "mention_volume": "High|Medium|Low|Minimal",
-      "sentiment": "Positive|Neutral|Negative|Mixed",
-      "key_narratives": ["narrative 1", "narrative 2"],
-      "platforms": ["Facebook", "Twitter"],
-      "notable_coverage": "1-2 sentences on notable coverage"
-    }
+    {"name":"<name>","organization":"<org>","mention_volume":"High|Medium|Low|Minimal","sentiment":"Positive|Neutral|Negative|Mixed","key_narratives":["<short>"],"platforms":["<name>"],"notable_coverage":"<1 sentence>"}
   ]
 }
 
-Include stakeholder_profiles for the top 5 most media-relevant stakeholders from this list: ${stakeholderList}.
-Make all data specific to ${sector} in ${region}. Use real media outlets, platforms, and observable trends.
-The sentiment_breakdown numbers must sum to 100.
-Platform share_pct values must sum to 100.`;
+Rules: sentiment_breakdown sums to 100. platform_breakdown sums to 100. Include 4-5 platforms, 4-5 narratives, 5-6 topic_links, 5-6 actors, 3 stakeholder_profiles max.
+Be specific to ${sector} in ${region}.`;
 
   const response = await client.messages.create(
     {
       model: "claude-sonnet-4-6",
-      max_tokens: 6000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     },
@@ -232,7 +221,7 @@ Platform share_pct values must sum to 100.`;
   };
 }
 
-// â”€â”€â”€ Route handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   let body: {
@@ -263,19 +252,19 @@ export async function POST(request: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 85_000);
 
   try {
-    // Web searches skipped to stay within timeout â€” using AI knowledge synthesis
+    // Web searches skipped to stay within timeout — using AI knowledge synthesis
     const searchResults: string[] = [];
     const isLive = false;
 
     console.log(`[social-analysis] Starting AI synthesis for ${s} in ${r}`);
 
-    // â”€â”€ Synthesise analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Synthesise analysis ────────────────────────────────────────────
     const analysis = await synthesiseAnalysis(
       s, r, o, stakeholderNames, searchResults, isLive, controller.signal
     );
 
     clearTimeout(timeoutId);
-    console.log(`[social-analysis] Analysis complete â€” data_source: ${analysis.data_source}`);
+    console.log(`[social-analysis] Analysis complete — data_source: ${analysis.data_source}`);
 
     return NextResponse.json({ analysis });
 
@@ -291,4 +280,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: reason }, { status: 500 });
   }
 }
-
