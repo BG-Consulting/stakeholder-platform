@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 90;
 
 const client = new Anthropic();
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface StakeholderMediaProfile {
   name: string;
@@ -63,7 +63,7 @@ export interface SocialAnalysisResult {
   stakeholder_profiles: StakeholderMediaProfile[];
 }
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// â”€â”€â”€ System prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SYSTEM_PROMPT = `You are a senior media intelligence analyst specialising in social listening, reputation monitoring, and public discourse analysis. Your role is to produce structured, evidence-based social media and media coverage analyses.
 
@@ -71,9 +71,9 @@ You analyse media landscapes across traditional news, online publications, and s
 
 When web search data is available, synthesise it into structured intelligence. When you must rely on training knowledge, clearly indicate this is a knowledge-based simulation rather than live monitoring data.
 
-Always be specific and concrete — name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
+Always be specific and concrete â€” name real organisations, media outlets, platforms, and observable trends rather than generic statements.`;
 
-// ─── Helper: extract text from search response ───────────────────────────────
+// â”€â”€â”€ Helper: extract text from search response â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function extractSearchText(content: Anthropic.ContentBlock[]): string {
   return content
@@ -85,7 +85,7 @@ function extractSearchText(content: Anthropic.ContentBlock[]): string {
     .join("\n\n");
 }
 
-// ─── Run web search query ─────────────────────────────────────────────────────
+// â”€â”€â”€ Run web search query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   try {
@@ -123,7 +123,7 @@ async function runSearch(query: string, signal: AbortSignal): Promise<string> {
   }
 }
 
-// ─── Main synthesis ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Main synthesis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function synthesiseAnalysis(
   sector: string,
@@ -137,7 +137,7 @@ async function synthesiseAnalysis(
 
   const searchContext = searchResults.filter(Boolean).length > 0
     ? `\n\nWEB SEARCH FINDINGS:\n${searchResults.filter(Boolean).join("\n\n---\n\n")}`
-    : "\n\nNo live search data available — base analysis on training knowledge.";
+    : "\n\nNo live search data available â€” base analysis on training knowledge.";
 
   const stakeholderList = stakeholderNames.slice(0, 8).join(", ");
 
@@ -150,7 +150,7 @@ Key Stakeholders: ${stakeholderList}
 Time Window: Last 6 months
 ${searchContext}
 
-Return ONLY a valid JSON object — no markdown, no code fences, no prose.
+Return ONLY a valid JSON object â€” no markdown, no code fences, no prose.
 
 The JSON must have exactly this structure:
 {
@@ -201,7 +201,7 @@ Platform share_pct values must sum to 100.`;
   const response = await client.messages.create(
     {
       model: "claude-sonnet-4-6",
-      max_tokens: 4000,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     },
@@ -232,7 +232,7 @@ Platform share_pct values must sum to 100.`;
   };
 }
 
-// ─── Route handler ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Route handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(request: NextRequest) {
   let body: {
@@ -263,19 +263,19 @@ export async function POST(request: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 85_000);
 
   try {
-    // Web searches skipped to stay within timeout — using AI knowledge synthesis
+    // Web searches skipped to stay within timeout â€” using AI knowledge synthesis
     const searchResults: string[] = [];
     const isLive = false;
 
     console.log(`[social-analysis] Starting AI synthesis for ${s} in ${r}`);
 
-    // ── Synthesise analysis ────────────────────────────────────────────
+    // â”€â”€ Synthesise analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const analysis = await synthesiseAnalysis(
       s, r, o, stakeholderNames, searchResults, isLive, controller.signal
     );
 
     clearTimeout(timeoutId);
-    console.log(`[social-analysis] Analysis complete — data_source: ${analysis.data_source}`);
+    console.log(`[social-analysis] Analysis complete â€” data_source: ${analysis.data_source}`);
 
     return NextResponse.json({ analysis });
 
@@ -291,3 +291,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: reason }, { status: 500 });
   }
 }
+
