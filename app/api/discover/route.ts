@@ -61,44 +61,73 @@ const FIELD_SCHEMA = `Each object must have exactly these fields:
 - "sources": array of 2-4 strings — real publicly accessible URLs for the organisation's official website, government directory, or credible reference pages; NEVER fabricate URLs
 - "source_years": array of integers or nulls — publication or last-updated year for each source URL (same length as sources array); use null if unknown`;
 
+const existing = (names: string[]) =>
+  `You have already identified these stakeholders:\n${names.map(n => `- ${n}`).join("\n")}\n\nDo NOT duplicate any of them.\n\n`;
+
 const batch1Prompt = (sector: string, region: string) =>
-  `Identify 10-12 of the MOST IMPORTANT stakeholders for a major project in the ${sector} sector in ${region}.
+  `Identify 12-15 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
 
-Focus on the highest-influence, most critical stakeholders across these categories:
-1. Government & Regulatory (key national ministries, top regulators)
-2. Private Sector (major corporations, leading industry associations)
-3. Civil Society & NGOs (prominent advocacy groups)
-4. Media & Communications (major national press)
-5. Academic & Research (top universities, leading think tanks)
-6. International Organizations & Donors (major UN agencies, development banks)
+Focus exclusively on:
+1. Government & Regulatory — key national ministries, cabinet-level officials, top regulators, parliamentary committees
+2. International Organizations & Donors — major UN agencies, World Bank, IMF, regional development banks, bilateral aid programmes
+3. Civil Society & NGOs — the most prominent national-level advocacy organisations
 
-Cover at least 4-5 different categories. Prioritise the stakeholders with the highest influence and most direct relevance.
-
+Return 12-15 stakeholders. Cover all 3 categories above.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
 const batch2Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `You have already identified these stakeholders for a major project in the ${sector} sector in ${region}:
-${existingNames.map((n) => `- ${n}`).join("\n")}
+  `${existing(existingNames)}Now identify 12-15 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
-Now identify 10-12 ADDITIONAL stakeholders that are NOT in the list above. Focus on:
-- Lesser-known regional and local actors (municipal authorities, regional trade bodies, local civil society groups)
-- Community media and specialised trade publications
-- Regional research institutes and smaller academic players
-- Smaller bilateral donors, embassy programmes, and regional international organisations
-- Local private sector players and emerging companies
-- Grassroots NGOs and community organisations
+Focus exclusively on:
+1. Private Sector — major corporations, leading industry associations, chambers of commerce at national level
+2. Academic & Research — top universities, leading think tanks, national research institutes relevant to ${sector}
+3. Media & Communications — major national newspapers, TV channels, influential online media, sector-specific publications
 
-Ensure coverage of any categories underrepresented in the existing list, especially:
-1. Government & Regulatory (local/municipal level)
-2. Private Sector (local businesses, SME associations)
-3. Civil Society & NGOs (grassroots, community-level)
-4. Media & Communications (regional/community media)
-5. Academic & Research (regional institutes)
-6. International Organizations & Donors (bilateral donors, smaller agencies)
+Return 12-15 stakeholders. Cover all 3 categories above.
+Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
+${FIELD_SCHEMA}`;
 
-Do NOT duplicate any stakeholder from the existing list above.
+const batch3Prompt = (sector: string, region: string, existingNames: string[]) =>
+  `${existing(existingNames)}Now identify 12-15 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
+Focus exclusively on LOCAL AND REGIONAL actors — go deep into sub-national level:
+1. Government & Regulatory — municipal authorities, district/provincial governments, local regulatory bodies, local elected officials
+2. Civil Society & NGOs — local and community-based NGOs, grassroots organisations, local advocacy groups, community associations
+3. International Organizations & Donors — smaller bilateral donors, embassy development programmes, regional funds, smaller UN country offices
+
+These should be less well-known actors operating at local/community level, NOT the major national organisations already identified.
+Return 12-15 stakeholders.
+Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
+${FIELD_SCHEMA}`;
+
+const batch4Prompt = (sector: string, region: string, existingNames: string[]) =>
+  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+
+Focus exclusively on INFORMAL INFLUENCERS AND COMMUNITY VOICES — actors who may not have formal institutional power but shape opinion and implementation:
+1. Religious leaders, traditional leaders, community elders with influence over the ${sector} sector
+2. Diaspora organisations and networks with influence in ${region}
+3. Local and community radio, community newspapers, bloggers, social media influencers relevant to ${sector}
+4. Grassroots women's groups, youth organisations, disability groups, minority community representatives
+5. Professional associations (lawyers, doctors, engineers, teachers) relevant to ${sector}
+
+These should be genuine community-level voices not yet identified. Be specific and name real organisations or known roles.
+Return 10-12 stakeholders.
+Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
+${FIELD_SCHEMA}`;
+
+const batch5Prompt = (sector: string, region: string, existingNames: string[]) =>
+  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+
+Focus exclusively on LOCAL ECONOMIC ACTORS AND LABOUR:
+1. Local SMEs and small business associations operating in the ${sector} space
+2. Trade unions, labour federations, and worker organisations relevant to ${sector}
+3. Local investors, microfinance institutions, local banks financing ${sector} activities
+4. Cooperatives, producer groups, farmer associations, artisan groups relevant to ${sector}
+5. Local contractors, suppliers, and service providers in the ${sector} supply chain
+
+These should be economic actors at the base of the pyramid — not the major corporations already identified.
+Return 10-12 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
@@ -131,15 +160,18 @@ function parseOfficeholderName(raw: string): string {
 async function generateStakeholders(
   sector: string,
   region: string,
-  batch: 1 | 2,
+  batch: 1 | 2 | 3 | 4 | 5,
   existingNames: string[],
   signal: AbortSignal
 ): Promise<Stakeholder[]> {
   console.log(`[discover] batch ${batch} — generating stakeholder list...`);
 
-  const userPrompt = batch === 1
-    ? batch1Prompt(sector, region)
-    : batch2Prompt(sector, region, existingNames);
+  const userPrompt =
+    batch === 1 ? batch1Prompt(sector, region) :
+    batch === 2 ? batch2Prompt(sector, region, existingNames) :
+    batch === 3 ? batch3Prompt(sector, region, existingNames) :
+    batch === 4 ? batch4Prompt(sector, region, existingNames) :
+                  batch5Prompt(sector, region, existingNames);
 
   const response = await client.messages.create(
     {
@@ -316,7 +348,13 @@ export async function POST(request: NextRequest) {
 
   const s = sector.trim();
   const r = region.trim();
-  const batch = (body.batch === 1 || body.batch === 2) ? body.batch : 1;
+  const batchNum = body.batch;
+  const batch: 1 | 2 | 3 | 4 | 5 =
+    batchNum === 1 ? 1 :
+    batchNum === 2 ? 2 :
+    batchNum === 3 ? 3 :
+    batchNum === 4 ? 4 :
+    batchNum === 5 ? 5 : 1;
   const existingNames = Array.isArray(body.existingNames) ? body.existingNames : [];
 
   console.log(`[discover] ▶ START batch=${batch} sector="${s}" region="${r}" existing=${existingNames.length}`);

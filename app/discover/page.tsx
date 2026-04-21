@@ -939,7 +939,7 @@ export default function DiscoverPage() {
   const [sector, setSector] = useState("");
   const [region, setRegion] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; label: string } | null>(null);
   const [stakeholders, setStakeholders] = useState<Stakeholder[] | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -980,36 +980,93 @@ export default function DiscoverPage() {
     finally { setUploadLoading(false); }
   };
 
+  const BATCH_LABELS = [
+    "National government & international organisations",
+    "Private sector, academia & media",
+    "Local & regional actors",
+    "Community voices & informal influencers",
+    "Local economic actors & labour",
+  ];
+
+  const TOTAL_BATCHES = 5;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const s = sector.trim(); const r = region.trim();
     if (!s || !r) return;
-    setLoading(true); setLoadingMore(false); setError(null); setStakeholders(null); setResultMode(null); setActiveCategory(null); setLastQuery({ sector: s, region: r });
+
+    setLoading(true); setBatchProgress(null); setError(null);
+    setStakeholders(null); setResultMode(null); setActiveCategory(null);
+    setLastQuery({ sector: s, region: r });
+
+    // Handle document upload
     let docStakeholders: Stakeholder[] = [];
     if (uploadedFile) {
-      try { const formData = new FormData(); formData.append("file", uploadedFile); const res = await fetch("/api/extract", { method: "POST", body: formData }); if (res.ok) { const data = await res.json(); docStakeholders = data.stakeholders; } } catch { /* non-fatal */ }
+      try {
+        const formData = new FormData(); formData.append("file", uploadedFile);
+        const res = await fetch("/api/extract", { method: "POST", body: formData });
+        if (res.ok) { const data = await res.json(); docStakeholders = data.stakeholders; }
+      } catch { /* non-fatal */ }
       setUploadedFile(null); if (fileInputRef.current) fileInputRef.current.value = "";
     }
+
+    // Demo data check
     const demo = getDemoData(s, r);
-    if (demo) { await new Promise(res => setTimeout(res, 600)); setStakeholders([...demo.stakeholders, ...docStakeholders]); setResultMode("demo"); setLoading(false); return; }
-    let batch1: Stakeholder[] = [];
-    try {
-      const res = await fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sector: s, region: r, batch: 1 }) });
-      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error((data as { error?: string }).error || `HTTP ${res.status}`); }
-      const data = await res.json(); batch1 = data.stakeholders; setStakeholders([...batch1, ...docStakeholders]); setResultMode("live");
-    } catch (err) {
-      const fallback = getDemoData(s, r);
-      if (fallback) { setStakeholders([...fallback.stakeholders, ...docStakeholders]); setResultMode("demo"); }
-      else if (docStakeholders.length > 0) { setStakeholders(docStakeholders); setResultMode("live"); }
-      else { setError(err instanceof Error ? err.message : "Unknown error"); }
-      setLoading(false); return;
+    if (demo) {
+      await new Promise(res => setTimeout(res, 600));
+      setStakeholders([...demo.stakeholders, ...docStakeholders]);
+      setResultMode("demo"); setLoading(false); return;
     }
-    setLoading(false); setLoadingMore(true);
-    try {
-      const existingNames = batch1.map(s => s.name);
-      const res = await fetch("/api/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sector: s, region: r, batch: 2, existingNames }) });
-      if (res.ok) { const data = await res.json(); setStakeholders(prev => [...(prev ?? []), ...data.stakeholders]); }
-    } catch { /* non-fatal */ } finally { setLoadingMore(false); }
+
+    // â”€â”€ Run 5 batches sequentially, showing progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    let allStakeholders: Stakeholder[] = [...docStakeholders];
+    let firstBatchFailed = false;
+
+    for (let batchNum = 1; batchNum <= TOTAL_BATCHES; batchNum++) {
+      setBatchProgress({ current: batchNum, total: TOTAL_BATCHES, label: BATCH_LABELS[batchNum - 1] });
+
+      try {
+        const existingNames = allStakeholders.map(s => s.name);
+        const res = await fetch("/api/discover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sector: s, region: r, batch: batchNum, existingNames }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const newBatch: Stakeholder[] = data.stakeholders;
+        allStakeholders = [...allStakeholders, ...newBatch];
+
+        // Show results immediately after first batch
+        if (batchNum === 1) {
+          setStakeholders([...allStakeholders]);
+          setResultMode("live");
+          setLoading(false);
+        } else {
+          setStakeholders([...allStakeholders]);
+        }
+      } catch (err) {
+        if (batchNum === 1) {
+          firstBatchFailed = true;
+          const fallback = getDemoData(s, r);
+          if (fallback) { setStakeholders([...fallback.stakeholders, ...docStakeholders]); setResultMode("demo"); }
+          else if (docStakeholders.length > 0) { setStakeholders(docStakeholders); setResultMode("live"); }
+          else { setError(err instanceof Error ? err.message : "Unknown error"); }
+          setLoading(false); setBatchProgress(null); return;
+        }
+        // Batches 2-5 failing is non-fatal â€” just continue
+        console.warn(`Batch ${batchNum} failed (non-fatal):`, err);
+      }
+    }
+
+    if (firstBatchFailed) return;
+    setLoading(false);
+    setBatchProgress(null);
   };
 
   const stanceSummary = stakeholders ? { supportive: stakeholders.filter(s => s.stance === "supportive").length, neutral: stakeholders.filter(s => s.stance === "neutral").length, opposed: stakeholders.filter(s => s.stance === "opposed").length } : null;
@@ -1095,7 +1152,37 @@ export default function DiscoverPage() {
         {loading && !stakeholders && (
           <div className="text-center py-16">
             <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin mb-4" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} />
-            <p className="text-sm" style={{ color: T.navyMid }}>Searching and analysing stakeholders for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>â€¦</p>
+            <p className="text-sm" style={{ color: T.navyMid }}>Starting analysis for <strong style={{ color: T.navyDark }}>{lastQuery?.sector}</strong> in <strong style={{ color: T.navyDark }}>{lastQuery?.region}</strong>â€¦</p>
+          </div>
+        )}
+
+        {/* Progress bar â€” shown while batches 2-5 load */}
+        {batchProgress && (
+          <div className="mb-6 rounded p-5" style={{ background: T.white, border: `1px solid ${T.border}`, boxShadow: "0 2px 12px rgba(0,48,87,0.07)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold" style={{ color: T.navyDark }}>
+                  Discovering stakeholders â€” Batch {batchProgress.current} of {batchProgress.total}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: T.navyMid }}>{batchProgress.label}â€¦</p>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: T.crimsonBg, color: T.crimson, border: `1px solid ${T.crimsonBorder}` }}>
+                {stakeholders?.length ?? 0} found so far
+              </span>
+            </div>
+            <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: T.border }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%`, background: `linear-gradient(90deg, ${T.navyDark}, ${T.crimson})` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              {Array.from({ length: batchProgress.total }).map((_, i) => (
+                <span key={i} className="text-[10px] font-semibold" style={{ color: i < batchProgress.current ? T.crimson : T.navyLight }}>
+                  {i + 1}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1166,19 +1253,12 @@ export default function DiscoverPage() {
                 ))}
               </div>
             )}
-            {viewMode === "list" && loadingMore && (
-              <div className="flex items-center justify-center gap-3 mt-6 px-5 py-4 rounded" style={{ background: T.white, border: `1px solid ${T.border}` }}>
-                <div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} />
-                <p className="text-sm" style={{ color: T.navyMid }}>Discovering additional regional and local stakeholdersâ€¦</p>
-              </div>
-            )}
 
             {/* Map */}
             {viewMode === "map" && (
               <Suspense fallback={<div className="flex items-center justify-center rounded" style={{ height: "600px", background: T.white, border: `1px solid ${T.border}` }}><div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} /></div>}>
                 <div style={{ animation: "fadeIn 0.25s ease-out" }}>
                   <MapView stakeholders={filteredStakeholders ?? []} />
-                  {loadingMore && <div className="flex items-center justify-center gap-3 mt-4 px-5 py-3 rounded" style={{ background: T.white, border: `1px solid ${T.border}` }}><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.crimson, borderTopColor: "transparent" }} /><p className="text-sm" style={{ color: T.navyMid }}>Discovering additional stakeholdersâ€¦</p></div>}
                 </div>
               </Suspense>
             )}
@@ -1186,7 +1266,7 @@ export default function DiscoverPage() {
         )}
 
         {/* Empty state */}
-        {!loading && !uploadLoading && !stakeholders && !error && (
+        {!loading && !uploadLoading && !batchProgress && !stakeholders && !error && (
           <div className="text-center py-20">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded mb-4" style={{ background: T.crimsonBg, border: `1px solid ${T.crimsonBorder}` }}>
               <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: T.crimson }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
