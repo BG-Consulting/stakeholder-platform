@@ -139,7 +139,7 @@ async function synthesiseAnalysis(
     ? `\n\nWEB SEARCH FINDINGS:\n${searchResults.filter(Boolean).join("\n\n---\n\n")}`
     : "\n\nNo live search data available — base analysis on training knowledge.";
 
-  const stakeholderList = stakeholderNames.slice(0, 20).join(", ");
+  const stakeholderList = stakeholderNames.slice(0, 8).join(", ");
 
   const prompt = `Produce a comprehensive social media and media intelligence analysis for the following:
 
@@ -176,10 +176,10 @@ The JSON must have exactly this structure:
   "influential_actors": [
     { "name": "name", "type": "Media|Government|NGO|Academic|Individual|Platform", "reach": "High|Medium|Low", "stance": "Supportive|Neutral|Critical" }
   ],
-  "public_engagement_summary": "2-3 paragraph summary of public engagement patterns",
+  "public_engagement_summary": "1-2 paragraph summary of public engagement patterns",
   "risk_signals": ["signal 1", "signal 2"],
   "opportunities": ["opportunity 1", "opportunity 2"],
-  "overall_summary": "3-4 paragraph executive summary of the media landscape",
+  "overall_summary": "2 paragraph executive summary of the media landscape",
   "stakeholder_profiles": [
     {
       "name": "stakeholder name",
@@ -193,7 +193,7 @@ The JSON must have exactly this structure:
   ]
 }
 
-Include stakeholder_profiles for the top 10 most media-relevant stakeholders from this list: ${stakeholderList}.
+Include stakeholder_profiles for the top 5 most media-relevant stakeholders from this list: ${stakeholderList}.
 Make all data specific to ${sector} in ${region}. Use real media outlets, platforms, and observable trends.
 The sentiment_breakdown numbers must sum to 100.
 Platform share_pct values must sum to 100.`;
@@ -201,7 +201,7 @@ Platform share_pct values must sum to 100.`;
   const response = await client.messages.create(
     {
       model: "claude-sonnet-4-6",
-      max_tokens: 8000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     },
