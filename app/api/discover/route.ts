@@ -65,7 +65,7 @@ const existing = (names: string[]) =>
   `You have already identified these stakeholders:\n${names.map(n => `- ${n}`).join("\n")}\n\nDo NOT duplicate any of them.\n\n`;
 
 const batch1Prompt = (sector: string, region: string) =>
-  `Identify 10-12 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
+  `Identify 8-10 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on:
 1. Government & Regulatory — key national ministries, cabinet-level officials, top regulators, parliamentary committees
@@ -77,19 +77,19 @@ Return ONLY a valid JSON array — no markdown, no code fences, no prose before 
 ${FIELD_SCHEMA}`;
 
 const batch2Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on:
 1. Private Sector — major corporations, leading industry associations, chambers of commerce at national level
 2. Academic & Research — top universities, leading think tanks, national research institutes relevant to ${sector}
 3. Media & Communications — major national newspapers, TV channels, influential online media, sector-specific publications
 
-Return 10-12 stakeholders. Cover all 3 categories above.
+Return 8-10 stakeholders. Cover all 3 categories above.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
 const batch3Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 12-15 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on LOCAL AND REGIONAL actors — go deep into sub-national level:
 1. Government & Regulatory — municipal authorities, district/provincial governments, local regulatory bodies, local elected officials
@@ -97,12 +97,12 @@ Focus exclusively on LOCAL AND REGIONAL actors — go deep into sub-national lev
 3. International Organizations & Donors — smaller bilateral donors, embassy development programmes, regional funds, smaller UN country offices
 
 These should be less well-known actors operating at local/community level, NOT the major national organisations already identified.
-Return 10-12 stakeholders.
+Return 8-10 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
 const batch4Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on INFORMAL INFLUENCERS AND COMMUNITY VOICES — actors who may not have formal institutional power but shape opinion and implementation:
 1. Religious leaders, traditional leaders, community elders with influence over the ${sector} sector
@@ -112,12 +112,12 @@ Focus exclusively on INFORMAL INFLUENCERS AND COMMUNITY VOICES — actors who ma
 5. Professional associations (lawyers, doctors, engineers, teachers) relevant to ${sector}
 
 These should be genuine community-level voices not yet identified. Be specific and name real organisations or known roles.
-Return 10-12 stakeholders.
+Return 8-10 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
 const batch5Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+  `${existing(existingNames)}Now identify 8-10 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on LOCAL ECONOMIC ACTORS AND LABOUR:
 1. Local SMEs and small business associations operating in the ${sector} space
@@ -127,7 +127,7 @@ Focus exclusively on LOCAL ECONOMIC ACTORS AND LABOUR:
 5. Local contractors, suppliers, and service providers in the ${sector} supply chain
 
 These should be economic actors at the base of the pyramid — not the major corporations already identified.
-Return 10-12 stakeholders.
+Return 8-10 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
@@ -176,7 +176,7 @@ async function generateStakeholders(
   const response = await client.messages.create(
     {
       model: "claude-sonnet-4-6",
-      max_tokens: 4096,
+      max_tokens: 8000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
     },
