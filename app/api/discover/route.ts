@@ -65,7 +65,7 @@ const existing = (names: string[]) =>
   `You have already identified these stakeholders:\n${names.map(n => `- ${n}`).join("\n")}\n\nDo NOT duplicate any of them.\n\n`;
 
 const batch1Prompt = (sector: string, region: string) =>
-  `Identify 12-15 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
+  `Identify 10-12 of the MOST IMPORTANT national-level and international stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on:
 1. Government & Regulatory — key national ministries, cabinet-level officials, top regulators, parliamentary committees
@@ -77,14 +77,14 @@ Return ONLY a valid JSON array — no markdown, no code fences, no prose before 
 ${FIELD_SCHEMA}`;
 
 const batch2Prompt = (sector: string, region: string, existingNames: string[]) =>
-  `${existing(existingNames)}Now identify 12-15 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
+  `${existing(existingNames)}Now identify 10-12 ADDITIONAL stakeholders for a major project in the ${sector} sector in ${region}.
 
 Focus exclusively on:
 1. Private Sector — major corporations, leading industry associations, chambers of commerce at national level
 2. Academic & Research — top universities, leading think tanks, national research institutes relevant to ${sector}
 3. Media & Communications — major national newspapers, TV channels, influential online media, sector-specific publications
 
-Return 12-15 stakeholders. Cover all 3 categories above.
+Return 10-12 stakeholders. Cover all 3 categories above.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
@@ -97,7 +97,7 @@ Focus exclusively on LOCAL AND REGIONAL actors — go deep into sub-national lev
 3. International Organizations & Donors — smaller bilateral donors, embassy development programmes, regional funds, smaller UN country offices
 
 These should be less well-known actors operating at local/community level, NOT the major national organisations already identified.
-Return 12-15 stakeholders.
+Return 10-12 stakeholders.
 Return ONLY a valid JSON array — no markdown, no code fences, no prose before or after it.
 ${FIELD_SCHEMA}`;
 
@@ -361,9 +361,9 @@ export async function POST(request: NextRequest) {
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
-    console.warn(`[discover] ⏰ 60s timeout — aborting batch ${batch}`);
+    console.warn(`[discover] ⏰ 85s timeout — aborting batch ${batch}`);
     controller.abort();
-  }, 60_000);
+  }, 85_000);
 
   try {
     let stakeholders: Stakeholder[];
@@ -384,11 +384,13 @@ export async function POST(request: NextRequest) {
 
     console.log(`[discover] batch ${batch} generated in ${Date.now() - startTime}ms`);
 
-    try {
-      await resolveOfficeholders(stakeholders, controller.signal);
-    } catch (err) {
-      console.warn(`[discover] batch ${batch} officeholder lookups failed, returning without:`, err);
-    }
+    // Officeholder web-search lookups disabled to prevent timeouts on large regions
+    // current_officeholder is already populated by the main generation prompt
+    // try {
+    //   await resolveOfficeholders(stakeholders, controller.signal);
+    // } catch (err) {
+    //   console.warn(`[discover] batch ${batch} officeholder lookups failed, returning without:`, err);
+    // }
 
     clearTimeout(timeoutId);
 
