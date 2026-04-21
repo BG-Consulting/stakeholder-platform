@@ -3,7 +3,9 @@
 import { useState, useRef, lazy, Suspense, useEffect } from "react";
 import Link from "next/link";
 import type { Stakeholder, StakeholderCategory } from "../api/discover/route";
+import type { SocialAnalysisResult } from "../api/social-analysis/route";
 import { getDemoData, DEMO_HINTS } from "../lib/demoData";
+import SocialAnalysisModal from "./SocialAnalysisModal";
 
 const MapView = lazy(() => import("./MapView"));
 
@@ -797,6 +799,9 @@ export default function DiscoverPage() {
   const [engagementLog, setEngagementLog] = useState<Record<string, EngagementEntry[]>>({});
   const [engagementTarget, setEngagementTarget] = useState<Stakeholder | null>(null);
   const [showOverview, setShowOverview] = useState(false);
+  const [socialAnalysis, setSocialAnalysis] = useState<SocialAnalysisResult | null>(null);
+  const [socialAnalysisLoading, setSocialAnalysisLoading] = useState(false);
+  const [socialAnalysisError, setSocialAnalysisError] = useState<string | null>(null);
 
   useEffect(() => { setEngagementLog(loadEngagementLog()); }, []);
 
@@ -809,6 +814,34 @@ export default function DiscoverPage() {
 
   const handleDismiss = (name: string) => {
     setStakeholders(prev => prev ? prev.filter(s => s.name !== name) : prev);
+  };
+
+  const runSocialAnalysis = async () => {
+    if (!stakeholders || !lastQuery) return;
+    setSocialAnalysisLoading(true);
+    setSocialAnalysisError(null);
+    try {
+      const res = await fetch("/api/social-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sector: lastQuery.sector,
+          region: lastQuery.region,
+          objectives: lastQuery.objectives,
+          stakeholders: stakeholders.map(s => ({ name: s.name, organization: s.organization })),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setSocialAnalysis(data.analysis);
+    } catch (err) {
+      setSocialAnalysisError(err instanceof Error ? err.message : "Analysis failed");
+    } finally {
+      setSocialAnalysisLoading(false);
+    }
   };
 
   const handleExtractFromDocument = async () => {
@@ -1042,6 +1075,12 @@ export default function DiscoverPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                   Export Report
                 </button>
+                <button onClick={runSocialAnalysis} disabled={socialAnalysisLoading} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #3730a3, #1d4ed8)", borderRadius: "3px" }}>
+                  {socialAnalysisLoading
+                    ? <><div className="w-4 h-4 rounded-full border-2 animate-spin" style={{ borderColor: T.white, borderTopColor: "transparent" }} />Analysing…</>
+                    : <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>Social Analysis</>
+                  }
+                </button>
                 <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold tracking-wider uppercase text-white hover:opacity-90" style={{ background: T.crimson, borderRadius: "3px" }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>Add Stakeholder
                 </button>
@@ -1104,6 +1143,13 @@ export default function DiscoverPage() {
       {showAddModal && <AddStakeholderModal onAdd={s => { setStakeholders(prev => prev ? [...prev, s] : [s]); if (!resultMode) setResultMode("live"); if (!lastQuery) setLastQuery({ sector: "Manual Entry", region: "Various" }); }} onClose={() => setShowAddModal(false)} />}
       {engagementTarget && <EngagementModal stakeholder={engagementTarget} entries={engagementLog[engagementTarget.name] ?? []} onSave={entries => handleSaveEngagement(engagementTarget.name, entries)} onClose={() => setEngagementTarget(null)} />}
       {showOverview && <EngagementOverviewModal log={engagementLog} onClose={() => setShowOverview(false)} />}
+      {socialAnalysis && <SocialAnalysisModal analysis={socialAnalysis} onClose={() => setSocialAnalysis(null)} />}
+      {socialAnalysisError && (
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-4 rounded text-sm shadow-lg" style={{ background: T.redBg, border: `1px solid ${T.redBorder}`, color: T.red, maxWidth: "360px" }}>
+          <strong>Social Analysis Error:</strong> {socialAnalysisError}
+          <button onClick={() => setSocialAnalysisError(null)} className="ml-3 font-bold hover:opacity-70">×</button>
+        </div>
+      )}
     </div>
   );
 }
