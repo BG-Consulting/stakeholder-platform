@@ -79,12 +79,6 @@ function extractSearchText(content: Anthropic.ContentBlock[]): string {
   return content
     .map(block => {
       if (block.type === "text") return block.text;
-      if (block.type === "tool_result") {
-        return (block.content as Anthropic.ContentBlock[])
-          ?.filter((b): b is Anthropic.TextBlock => b.type === "text")
-          .map(b => b.text)
-          .join("\n") ?? "";
-      }
       return "";
     })
     .filter(Boolean)
